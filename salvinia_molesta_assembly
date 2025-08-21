@@ -1,0 +1,1440 @@
+
+##unzip any zipped files
+gunzip *.fastq.gz
+##Retrieving K-mers
+##
+~/bin/jellyfish-2.2.5/bin/jellyfish count -C -m 21 -s 3000000000 -t 10 *.fastq -o reads.jf
+
+##Exporting the kmer count histogram
+##
+~/bin/jellyfish-2.2.5/bin//jellyfish histo -t 10 reads.jf > reads.histo
+
+##Counting kmer 51 to check for the hifiasm thing
+gunzip Salvinia_molesta_hif_cat.fastq.gz
+cd kmer51/
+~/bin/jellyfish-2.2.5/bin/jellyfish count <(zcat ~/Salvinia_molesta/Salvinia_molesta_hif_cat.fastq.gz) -C -m 51 -s 5G -t 20 -o reads_51.jf
+~/bin/jellyfish-2.2.5/bin/jellyfish count <(zcat ~/Salvinia_molesta/Salvinia_molesta_hif_cat.fastq.gz) -C -m 21 -s 5G -t 10 -o reads_21.jf
+~/bin/jellyfish-2.2.5/bin//jellyfish histo -t 10 reads_51.jf > reads_51.histo
+~/bin/jellyfish-2.2.5/bin/jellyfish count ~/Salvinia_molesta/Salvinia_molesta_hif_cat.fastq -C -m 30 -s 5G -t 20 -o reads_30.jf
+~/bin/jellyfish-2.2.5/bin//jellyfish histo -t 10 reads_30.jf > reads_30.histo
+~/bin/jellyfish-2.2.5/bin/jellyfish count <(zcat ~/Salvinia_molesta/Salvinia_molesta_hif_cat.fastq.gz) -C -m 17 -s 5G -t 20 -o reads_17.jf
+~/bin/jellyfish-2.2.5/bin//jellyfish histo -t 10 reads_17.jf > reads_17.histo
+
+##Jellyfish with the HiC reads to see what does that say about ploidy - cause short reads!
+~/bin/jellyfish-2.2.5/bin/jellyfish count <(zcat S_molesta_HIC_cat_reads.fastq.gz) -C -m 21 -s 5G -t 30 -o reads_21.jf
+~/bin/jellyfish-2.2.5/bin//jellyfish histo -t 20 reads_21.jf > reads_21.histo
+~/bin/genomescope2.0/genomescope.R -i reads_21.histo -k 21 -o kmer_21_p2 -p 2
+~/bin/genomescope2.0/genomescope.R -i reads_21.histo -k 21 -o kmer_21_p5 -p 5
+
+
+##mashmap
+##Get the biggest 10 contigs(different contigs!!) that were scaffolded and align the assembly to it (with a broad range aligner) and check how many copies of those you get.
+conda activate r_env
+~/bin/genomescope2.0/genomescope.R -i ~/Salvinia_molesta/kmer_17/reads_17.hist -k 17 -o ~/Salvinia_molesta/kmer_17
+~/bin/genomescope2.0/genomescope.R -i ~/Salvinia_molesta/kmer_19/reads_19.hist -k 19 -o ~/Salvinia_molesta/kmer_19
+~/bin/genomescope2.0/genomescope.R -i ~/Salvinia_molesta/kmer_23/reads_23.hist -k 23 -o ~/Salvinia_molesta/kmer_23
+~/bin/genomescope2.0/genomescope.R -i ~/Salvinia_molesta/kmer_25/reads_25.hist -k 25 -o ~/Salvinia_molesta/kmer_25
+~/bin/genomescope2.0/genomescope.R reads.hist 21 150 ~/Salvinia_molesta/full_data_scope
+
+~/bin/genomescope2.0/genomescope.R -i reads.histo -k 21 -o S_molesta_jellyfish_genomescope
+~/bin/genomescope2.0/genomescope.R -i kmcdb.hist -k 21 -p 5 -o S_molesta_kmc_master_full_data_genomescope
+~/bin/genomescope2.0/genomescope.R -i kmcdb.hist -k 21 -p 2 -o S_molesta_kmc_master_full_data_genomescope_diploid
+
+~/bin/genomescope2.0/genomescope.R -i reads_17.histo -k 17 -o kmer_17
+~/bin/genomescope2.0/genomescope.R -i reads_21.histo -k 21 -o kmer_21
+~/bin/genomescope2.0/genomescope.R -i reads_30.histo -k 30 -o kmer_30
+~/bin/genomescope2.0/genomescope.R -i reads_51.histo -k 51 -o kmer_51
+~/bin/genomescope2.0/genomescope.R -i reads_17.histo -k 17 -o kmer_17 -p 3
+~/bin/genomescope2.0/genomescope.R -i reads_21.histo -k 21 -o kmer_21 -p 3
+~/bin/genomescope2.0/genomescope.R -i reads_30.histo -k 30 -o kmer_30 -p 3
+~/bin/genomescope2.0/genomescope.R -i reads_51.histo -k 51 -o kmer_51 -p 3
+~/bin/genomescope2.0/genomescope.R -i reads_17.histo -k 17 -o kmer_17 -p 4
+~/bin/genomescope2.0/genomescope.R -i reads_21.histo -k 21 -o kmer_21 -p 4
+~/bin/genomescope2.0/genomescope.R -i reads_30.histo -k 30 -o kmer_30 -p 4
+~/bin/genomescope2.0/genomescope.R -i reads_51.histo -k 51 -o kmer_51 -p 4
+
+##Running kat to check for kmer usage on the scaffold and the raw reads
+kat comp -t 20 -o hifi_vs_assembly '~/Salvinia_molesta/Salvinia_molesta_hif_cat.fastq.gz' ~/Salvinia_molesta/S_molesta_cleaned_1kk.fasta.gz
+kat comp -t 20 -m 21 -h -x 10 -o hifi_vs_assembly '~/Salvinia_molesta/Salvinia_molesta_hif_cat.fastq.gz' ~/Salvinia_molesta/S_molesta_cleaned_1kk.fasta.gz
+kat comp -t 20 -m 21 -g -n -o hifi_vs_assembly '~/Salvinia_molesta/Salvinia_molesta_hif_cat.fastq.gz' ~/Salvinia_molesta/S_molesta_cleaned_1kk.fasta
+kat comp -t 20 -m 21 -g -H 200000000 -n -o hifi_vs_assembly '~/Salvinia_molesta/Salvinia_molesta_hif_cat.fastq.gz' ~/Salvinia_molesta/S_molesta_cleaned_1kk.fasta
+kat sect -m 21 -o contaminat_molesta_scaffold ~/Salvinia_molesta/S_molesta_cleaned_1kk.fasta.gz (~/Salvinia_molesta/Salvinia_molesta_hif_cat.fastq.gz) >log
+
+##Use genomescope on command line (If it doesnt work, do it online)
+#~/bin/genomescope/genomescope.R histogram_file k-mer_length read_length output_dir
+~/bin/genomescope2.0/genomescope.R reads.histo 21 150 ~/Salvinia_molesta/full_data_scope
+
+~/bin/smudgeplot-0.2.1/exec/smudgeplot.py cutoff reads.histo L/U
+Cutoff is 38 and 1400
+
+#Extract genomic kmers and make the smudgeplot
+L=$(~/bin/smudgeplot-0.2.1/exec/smudgeplot.py cutoff reads.histo L)
+U=$(~/bin/smudgeplot-0.2.1/exec/smudgeplot.py cutoff reads.histo U)
+echo $L $U # these need to be sane values like 30 800 or so
+/home/fay-wei/bin/jellyfish-2.2.5/bin/jellyfish dump -c -L $L -U $U reads.jf | ~/bin/smudgeplot-0.2.1/exec/smudgeplot.py hetkmers -o 
+
+##I used 200 as the high boudnarie because I checked the .hist file and there was not another peak after 200 (besides the plastids!)
+/home/fay-wei/bin/jellyfish-2.2.5/bin/jellyfish dump -c -L $L -U 200 reads.jf > jellyfish_salvinia.dump
+~/bin/smudgeplot-0.2.1/exec/smudgeplot.py hetkmers -o kmer_pairs < jellyfish_salvinia.dump
+# note that if you would like use --middle flag, you would have to sort the jellyfish dump first
+
+##Retireving sub-dataset because that make
+##making an assembly to run juicer on it
+##first combine all reads into a single file
+cat XDOVE_20231113_R84050_PL4954-001_1-B01.hifi_reads.default.fastq XDOVE_20231113_R84050_PL4954-001_1-A01.hifi_reads.default.fastq XDOVE_20231110_R84050_PL4954-001_1-C01.hifi_reads.default.fastq > Salvinia_molesta_hif_cat.fastq
+
+##Hifiasm assembly
+##1st run
+hifiasm -o Salvinia_molesta_Hifi.asm --primary -t 63 *.fastq.gz
+hifiasm -o Salvinia_molesta_Hifi.asm --primary -t -25 ~/data/Salvinia_molesta/raw_reads/Salvinia_molesta_hif_cat.fastq.gz
+
+##3rd run
+hifiasm -o Salvinia_molesta_Hifi.asm --primary --n-hap 5 -t 60 ~/data/Salvinia_molesta/*.fastq.gz > out 2>error
+
+##4th run
+hifiasm -o Salvinia_molesta_Hifi.asm -k 21 --primary --n-hap 5 --hg-size 700m --hom-cov 330 -t 62 ~/data/Salvinia_molesta/raw_reads/Salvinia_molesta_hif_cat.fastq.gz > out 2>error
+hifiasm -o Salvinia_molesta_Hifi.asm -k 21 --primary --n-hap 5 --hg-size 700m --hom-cov 330 -t 5 ~/data/Salvinia_molesta/raw_reads/Salvinia_molesta_hif_cat.fastq.gz > out 2>error
+
+##5th run
+hifiasm -o Salvinia_molesta_Hifi.asm -k 63 --primary -t 50 /home/fl329/data/Salvinia_molesta/raw_reads/Salvinia_molesta_hif_cat.fastq.gz > out 2>error
+
+##6th run - Running the kraken cleaned reads assembly
+hifiasm -o Salvinia_molesta_Hifi.asm --primary -I 3 --n-hap 5 -t 60 S_molesta_raw_reads_kraken_extract.fasta > out 2>error
+
+##second time
+hifiasm -o Salvinia_molesta_Hifi.asm --primary --hom-cov 137 --n-hap 5 -t 50 /home/fl329/data/Salvinia_molesta/6th_kraken/S_molesta_raw_reads_kraken_extract.fasta.gz > out 2>error_second
+
+##7th run - Running with no purges - let's see how big is a single haplotype.... -- segmentation faults
+hifiasm -o Salvinia_molesta_Hifi.asm --primary -I 0 -t 62 /home/fl329/data/Salvinia_molesta/6th_kraken/S_molesta_raw_reads_kraken_extract.fasta.gz > out 2>error
+
+##8th run - Combining HiFI and HiC data for assembly
+hifiasm -o Salvinia_molesta_Hifi.asm --n-perturb 20000 --h1 /home/fl329/data/Salvinia_molesta/raw_reads/Salvinia_HiC_reads/Salvinia_molesta_HiC_R1.fastq.gz --h2 /home/fl329/data/Salvinia_molesta/raw_reads/Salvinia_HiC_reads/Salvinia_molesta_HiC_R2.fastq.gz --primary -t 50 /home/fl329/data/Salvinia_molesta/raw_reads/Salvinia_molesta_hif_cat.fastq.gz
+
+##9th run - 
+hifiasm -o Salvinia_molesta_Hifi.asm --n-perturb 20000 --h1 /home/fl329/data/Salvinia_molesta/raw_reads/Salvinia_HiC_reads/Salvinia_molesta_HiC_R1.fastq.gz --h2 /home/fl329/data/Salvinia_molesta/raw_reads/Salvinia_HiC_reads/Salvinia_molesta_HiC_R2.fastq.gz --primary -t 50 /home/fl329/data/Salvinia_molesta/raw_reads/Salvinia_molesta_hif_cat.fastq.gz
+
+awk '/^S/{print ">"$2;print $3}' Salvinia_molesta_Hifi.asm.p_ctg.gfa > Salvinia_molesta_Hifi.asm.p_ctg.fasta
+seqkit stats -a Salvinia_molesta_Hifi.asm.p_ctg.fasta
+##Compleasm - has to be in the compleasm env!
+##1st run
+~/bin/compleasm/compleasm.py download viridiplantae
+
+~/bin/compleasm/compleasm.py run -t 20 -l viridiplantae_odb10 -a ~/Salvinia_molesta/hifiasm_assembly/1st_run_diploid/Salvinia_molesta_Hifi.asm.p_utg.fasta -o Salvinia_molesta_1st_p.utg &
+~/bin/compleasm/compleasm.py analyze -t 8 -l viridiplantae_odb10 -g miniprot_output.gff -o miniprot_genome_completeness &
+
+~/bin/compleasm/compleasm.py run -t 20 -l viridiplantae_odb10 -a ~/Salvinia_molesta/hifiasm_assembly/kraken/1st_run/S_molesta_p.ctg_EUK_kraken_extract.fasta -o S_molesta_p.ctg_EUK_kraken_extract_compleasm &
+
+##3rd run
+~/bin/compleasm/compleasm.py run -t 20 -l viridiplantae -a ~/Salvinia_molesta/hifiasm_assembly/3rd_run/Salvinia_molesta_Hifi.asm.p_utg.fasta -o Salvinia_molesta_3rd_p.utg &
+
+compleasm run -t 20 -l viridiplantae -a ~/Salvinia_molesta/hifiasm_assembly/3rd_run/Salvinia_molesta_Hifi.asm.p_utg.fasta -o Salvinia_molesta_3rd_p.utg &
+
+~/bin/busco/bin/busco -i ~/Salvinia_molesta/hifiasm_assembly/3rd_run/Salvinia_molesta_Hifi.asm.p_utg.fasta -f -l viridiplantae_odb10 -o Salvinia_molesta_3rd_p.utg -m genomes --cpu 15 &>
+~/bin/compleasm/compleasm.py run -t 20 -l viridiplantae_odb10 -a ~/Salvinia_molesta/hifiasm_assembly/kraken/3rd_run/S_molesta_p.ctg_EUK_kraken_extract.fasta -o S_molesta_p.ctg_EUK_kraken_extract_compleasm &
+
+##6th run
+~/bin/compleasm/compleasm.py run -t 30 -l viridiplantae -a ~/Salvinia_molesta/hifiasm_assembly/6th_run_no_BAC/fastk/Salvinia_molesta_Hifi.asm.p_utg.fasta -o Salvinia_molesta_6th_p.utg 2>error_compleasm
+
+~/bin/compleasm/compleasm.py run -t 20 -l viridiplantae_odb10 -a ~/Salvinia_molesta/hifiasm_assembly/kraken/3rd_run/S_molesta_p.ctg_EUK_kraken_extract.fasta -o S_molesta_p.ctg_EUK_kraken_extract_compleasm &
+
+##Align p.utg files to the raw reads
+~/bin/bwa-mem2-2.2.1_x64-linux/bwa-mem2 index Salvinia_molesta_Hifi.asm.p_utg.fa
+~/bin/bwa-mem2-2.2.1_x64-linux/bwa-mem2 index Salvinia_molesta_Hifi.asm.p_utg.fasta
+
+##check the .p.utg file for contamination using kraken - 1st run
+kraken2 -db /home/ps997/krakenDBs/kraken_nt Salvinia_molesta_Hifi.asm.p_utg.fasta --threads 20 --output Salvinia_molesta_Hifi.asm.p_utg.results --report Salvinia_molesta_Hifi.asm.p_utg.report
+
+extract_kraken_reads.py -t 2 -k Salvinia_molesta_Hifi.asm.p_utg.results -s ~/Salvinia_molesta/hifiasm_assembly/1st_run/Salvinia_molesta_Hifi.asm.p_utg.fasta -o S_molesta_p.utg_BAC_kraken_extract.fasta --include-children -r Salvinia_molesta_Hifi.asm.p_utg.report
+extract_kraken_reads.py -t 2759 -k Salvinia_molesta_Hifi.asm.p_utg.results -s ~/Salvinia_molesta/hifiasm_assembly/1st_run/Salvinia_molesta_Hifi.asm.p_utg.fasta -o S_molesta_p.utg_EUK_kraken_extract.fasta --include-children -r Salvinia_molesta_Hifi.asm.p_utg.report
+
+##Extracting EUK reads from compiled raw reads
+kraken2 -db /home/ps997/krakenDBs/kraken_nt ~/Salvinia_molesta/Salvinia_molesta_hif_cat.fastq.gz --threads 25 --output ~/Salvinia_molesta/kraken_raw_reads/Salvinia_molesta_raw_reads.results --report ~/Salvinia_molesta/kraken_raw_reads/Salvinia_molesta_raw_reads.report
+extract_kraken_reads.py -t 2759 -k Salvinia_molesta_raw_reads.results -s ~/Salvinia_molesta/Salvinia_molesta_hif_cat.fastq.gz -o S_molesta_raw_reads_kraken_extract.fasta --include-children -r Salvinia_molesta_raw_reads.report
+
+##Archaea extraction
+extract_kraken_reads.py -t 2 -k Salvinia_molesta_raw_reads.results -s ~/Salvinia_molesta/Salvinia_molesta_hif_cat.fastq.gz -o S_molesta_raw_reads_kraken_archaeae.fasta --include-children -r Salvinia_molesta_raw_reads.report
+##Bacterial extraction
+extract_kraken_reads.py -t 2757 -k Salvinia_molesta_raw_reads.results -s ~/Salvinia_molesta/Salvinia_molesta_hif_cat.fastq.gz -o S_molesta_raw_reads_kraken_bacterial.fasta --include-children -r Salvinia_molesta_raw_reads.report
+
+kraken2 -db /home/ps997/krakenDBs/kraken_nt Salvinia_molesta_Hifi.asm.p_ctg.fasta --threads 20 --output Salvinia_molesta_Hifi.asm.p_ctg.results --report Salvinia_molesta_Hifi.asm.p_ctg.report
+
+extract_kraken_reads.py -t 2 -k Salvinia_molesta_Hifi.asm.p_ctg.results -s Salvinia_molesta_Hifi.asm.p_ctg.fasta -o S_molesta_p.ctg_BAC_kraken_extract.fasta --include-children -r Salvinia_molesta_Hifi.asm.p_ctg.report
+extract_kraken_reads.py -t 2759 -k Salvinia_molesta_Hifi.asm.p_ctg.results -s Salvinia_molesta_Hifi.asm.p_ctg.fasta -o S_molesta_p.ctg_EUK_kraken_extract.fasta --include-children -r Salvinia_molesta_Hifi.asm.p_ctg.report
+
+##kraken extraction p.utg - 3rd run
+kraken2 -db /home/ps997/krakenDBs/kraken_nt Salvinia_molesta_Hifi.asm.p_utg.fasta --threads 20 --output Salvinia_molesta_Hifi.asm.p_utg.results --report Salvinia_molesta_Hifi.asm.p_utg.report
+
+extract_kraken_reads.py -t 2 -k Salvinia_molesta_Hifi.asm.p_utg.results -s Salvinia_molesta_Hifi.asm.p_utg.fasta -o S_molesta_p.utg_BAC_kraken_extract.fasta --include-children -r Salvinia_molesta_Hifi.asm.p_utg.report
+extract_kraken_reads.py -t 2759 -k Salvinia_molesta_Hifi.asm.p_utg.results -s Salvinia_molesta_Hifi.asm.p_utg.fasta -o S_molesta_p.utg_EUK_kraken_extract.fasta --include-children -r Salvinia_molesta_Hifi.asm.p_utg.report
+
+kraken2 -db /home/ps997/krakenDBs/kraken_nt Salvinia_molesta_Hifi.asm.p_ctg.fasta --threads 20 --output Salvinia_molesta_Hifi.asm.p_ctg.results --report Salvinia_molesta_Hifi.asm.p_ctg.report
+
+extract_kraken_reads.py -t 2 -k Salvinia_molesta_Hifi.asm.p_ctg.results -s ~/Salvinia_molesta/hifiasm_assembly/kraken/3rd_run/Salvinia_molesta_Hifi.asm.p_ctg.fasta -o S_molesta_p.ctg_BAC_kraken_extract.fasta --include-children -r Salvinia_molesta_Hifi.asm.p_ctg.report
+extract_kraken_reads.py -t 2759 -k Salvinia_molesta_Hifi.asm.p_ctg.results -s ~/Salvinia_molesta/hifiasm_assembly/kraken/3rd_run/Salvinia_molesta_Hifi.asm.p_ctg.fasta -o S_molesta_p.ctg_EUK_kraken_extract.fasta --include-children -r Salvinia_molesta_Hifi.asm.p_ctg.report
+
+##kraken extraction p.utg - 4th run
+kraken2 -db /home/ps997/krakenDBs/kraken_nt Salvinia_molesta_Hifi.asm.p_utg.fasta --threads 20 --output Salvinia_molesta_Hifi.asm.p_utg.results --report Salvinia_molesta_Hifi.asm.p_utg.report
+
+extract_kraken_reads.py -t 2 -k Salvinia_molesta_Hifi.asm.p_utg.results -s ~/Salvinia_molesta/hifiasm_assembly/4th_run/Salvinia_molesta_Hifi.asm.p_utg.fasta -o S_molesta_p.utg_BAC_kraken_extract.fasta --include-children -r Salvinia_molesta_Hifi.asm.p_utg.report
+extract_kraken_reads.py -t 2759 -k Salvinia_molesta_Hifi.asm.p_utg.results -s ~/Salvinia_molesta/hifiasm_assembly/4th_run/Salvinia_molesta_Hifi.asm.p_utg.fasta -o S_molesta_p.utg_EUK_kraken_extract.fasta --include-children -r Salvinia_molesta_Hifi.asm.p_utg.report
+
+##running kraken on the 6th run cleaned assembly for blobtools
+kraken2 -db /home/ps997/krakenDBs/kraken_nt Salvinia_molesta_Hifi.asm.p_utg.fasta --threads 30 --output Salvinia_molesta_Hifi.asm.p_utg.results --report Salvinia_molesta_Hifi.asm.p_utg.report
+
+#Checking the dot plot
+just installed D-Genies on the Li server to handle larger genomes that cant be submitted to their webserver. When you login with ssh, add -L 5000:localhost:5000  and then in a browser open http://localhost:5000. I gave it a quick test and it should work for anyone
+
+##seqkit to retrieve the Q1-Q3 reads to have half of the coverage
+#Q1=10261 and Q3=13995
+
+seqkit seq -M 13995 Salvinia_molesta_hif_cat.fastq.gz > S_molesta_Q3.fastq
+seqkit seq -m 10261 S_molesta_Q3.fastq > S_molesta_Q3_Q1.fastq
+
+seqkit stats -a XDOVE_20231110_R84050_PL4954-001_1-C01.hifi_reads.default.fastq.gz
+seqkit stats -a XDOVE_20231113_R84050_PL4954-001_1-A01.hifi_reads.default.fastq.gz
+seqkit stats -a XDOVE_20231113_R84050_PL4954-001_1-B01.hifi_reads.default.fastq.gz
+seqkit stats -a Salvinia_molesta_hif_cat.fastq.gz
+
+##Confirming the number of reads
+100% = 22117314
+75%=16587985
+50%=11058657
+25%=5529328
+
+~/bin/jellyfish-2.2.5/bin/jellyfish count -C -m 21 -s 3000000000 -t 10 ~/Salvinia_molesta/S_molesta_Q3_Q1.fastq -o reads_Q1_Q3.jf
+~/bin/jellyfish-2.2.5/bin//jellyfish histo -t 20 reads_Q1_Q3.jf > reads_Q1_Q3.hist
+
+~/bin/genomescope/genomescope.R reads_Q1_Q3.hist 21 150 ~/Salvinia_molesta/Q1_Q3
+~/bin/genomescope/genomescope.R reads_Q1_Q3.hist 21 10000 ~/Salvinia_molesta/Q1_Q3/test
+
+L=$(~/bin/smudgeplot-master/exec/smudgeplot.py cutoff reads_Q1_Q3.hist L)
+U=$(~/bin/smudgeplot-master/exec/smudgeplot.py cutoff reads_Q1_Q3.hist U)
+echo $L $U
+cutoff is 15 and 1100
+/home/fay-wei/bin/jellyfish-2.2.5/bin/jellyfish dump -c -L $L -U $U reads_Q1_Q3.jf | ~/bin/smudgeplot-0.2.1/exec/smudgeplot.py hetkmers -o kmer_pairs
+
+##KMC has a smude_pairs that is way more efficient then smudgeplot - so you can just do that. So we are going to count the kmers (half!) and try to run it (https://github.com/refresh-bio/KMC?tab=readme-ov-file)
+
+##counting kmers based on the kmc tutorial
+~/bin/KMC/KMC3.2.4.linux.x64/bin/kmc -k21 ~/Salvinia_molesta/S_molesta_Q3_Q1.fastq 21mers . 
+
+__________________________________________________________
+##kmc with 100k cutoff
+~/bin/KMC/KMC-master/bin/kmc -k21 -t20 -m64 -ci1 -cs100000 ~/Salvinia_molesta/assembly/Salvinia_molesta_hif_cat.fastq kmcdb ./
+
+~/bin/KMC/KMC-master/bin/kmc_tools transform kmcdb histogram kmcdb.hist -cx100000
+
+L=$(~/bin/smudgeplot-master/exec/smudgeplot.py cutoff kmcdb.hist L)
+U=$(~/bin/smudgeplot-master/exec/smudgeplot.py cutoff kmcdb.hist U)
+
+~/bin/KMC/KMC-master/bin/kmc_tools transform kmcdb -ci"$L" -cx"$U" reduce kmcdb_L"$L"_U"$U"
+
+~/bin/KMC/KMC-master/bin/smudge_pairs kmcdb_L"$L"_U"$U" kmcdb_L"$L"_U"$U"_coverages.tsv kmcdb_L"$L"_U"$U"_pairs.tsv > kmcdb_L"$L"_U"$U"_familysizes.tsv
+
+~/bin/smudgeplot-master/exec/smudgeplot.py plot kmcdb_L"$L"_U"$U"_coverages.tsv
+
+~/bin/KMC/KMC3.2.4.linux.x64/bin/kmc -k21 -m64 -t15 -ci1 -cs10000 ~/Salvinia_molesta/S_molesta_Q3_Q1.fastq kmcdb ./
+
+##Trying FastK and PloidyPlot - you have to do on the conda env that fastk is installed
+~/bin/MERQURY.FK-main/PloidyPlot
+FastK -k21 -t60 -t -c -v -T40 -P/home/fl329/tmp /home/fl329/tmp/Salvinia_molesta_hif_cat.fastq
+Histex -G Salvinia_molesta_hif_cat.hist > S_molesta_histex.hist
+~/bin/MERQURY.FK-main/PloidyPlot -P~/tmp -pdf Salvinia_molesta_hif_cat.ktab -k -v -oS_molesta_ploidyplot -T60 2>error
+
+/~/bin/MERQURY.FK-main/PloidyPlot -P~/data/Salvinia_molesta/tmp -pdf Salvinia_molesta_hif_cat.ktab -k -v -oS_molesta_ploidyplot -T50 2>error
+
+##Ploidyplot for half the raw_reads dataset
+FastK -k51 -t -c -v -T20 -M200 -P./ ~/Salvinia_molesta/S_molesta_Q3_Q1.fastq
+~/bin/MERQURY.FK-main/PloidyPlot -P./ -pdf S_molesta_Q3_Q1.ktab -k -v -oS_molesta_ploidyplot_51 -T20 2>error_ploidyplot_k51
+~/bin/MERQURY.FK-main/Logex -T40 -H 'result=A' S_molesta_Q3_Q1.fastq.ktab
+
+FastK -k21 -t -c -v -T20 -M200 -P./ ~/Salvinia_molesta/S_molesta_Q3_Q1.fastq
+~/bin/MERQURY.FK-main/PloidyPlot -P./ -pdf S_molesta_Q3_Q1.fastq.ktab -k -v -oS_molesta_ploidyplot_21 -T40 2>error_ploidyplot_k21
+Logex -H 'result=A&.B' sample.ktab contigs.ktab
+
+
+#It says that I should run Loges to merge tables but I only have a single table.....
+Logex -H 'result=A&.B' sample.ktab contigs.ktab
+
+~/bin/FASTK-master/Logex -T50 -H 'result=A' Salvinia_molesta_hif_cat.ktab 
+~/bin/FASTK-master/Symmex -T50 -P/home/fl329/tmp -v Salvinia_molesta_hif_cat.ktab Salvinia_molesta_symmex.ktab
+~/bin/MERQURY.FK-main/PloidyPlot -P/home/fl329/tmp -pdf Salvinia_molesta_symmex -k -v -oS_molesta_ploidyplot -T4
+
+##Trying kmc_master full data
+gunzip ~/Salvinia_molesta/assembly/Salvinia_molesta_hif_cat.fastq.gz
+~/bin/KMC/KMC-master/bin/kmc -k21 -t15 -m64 -ci1  ~/Salvinia_molesta/assembly/Salvinia_molesta_hif_cat.fastq kmcdb ./
+
+~/bin/KMC/KMC-master/bin/kmc_tools transform kmcdb histogram kmcdb.hist -cx100000
+
+L=$(~/bin/smudgeplot-master/exec/smudgeplot.py cutoff kmcdb.hist L)
+U=$(~/bin/smudgeplot-master/exec/smudgeplot.py cutoff kmcdb.hist U)
+
+~/bin/KMC/KMC-master/bin/kmc_tools transform kmcdb -ci"$L" -cx"$U" reduce kmcdb_L"$L"_U"$U"
+
+~/bin/KMC/KMC-master/bin/smudge_pairs kmcdb_L"$L"_U"$U" kmcdb_L"$L"_U"$U"_coverages.tsv kmcdb_L"$L"_U"$U"_pairs.tsv > kmcdb_L"$L"_U"$U"_familysizes.tsv
+
+~/bin/smudgeplot-master/exec/smudgeplot.py plot kmcdb_L"$L"_U"$U"_coverages.tsv
+
+~/bin/KMC/KMC3.2.4.linux.x64/bin/kmc -k21 -m64 -t15 -ci1 -cs10000 ~/Salvinia_molesta/S_molesta_Q3_Q1.fastq kmcdb ./
+
+##HiC scaffolding
+/data/home/fl329/bin/juicer/scripts/juicer.sh
+
+bwa mem -t 60 -5SP /data/home/fl329/data/Salvinia_molesta_HIC/Salvinia_molesta_Hifi.asm.p_utg.fasta /data/home/fl329/data/Salvinia_molesta_HIC/raw_data/DTG_OmniC_940_R1.fastq.gz /data/home/fl329/data/Salvinia_molesta_HIC/raw_data/DTG_OmniC_940_R2.fastq.gz > S_molesta_HiC_scaff_Omic940.sam
+bwa mem -t 60 -5SP /data/home/fl329/data/Salvinia_molesta_HIC/Salvinia_molesta_Hifi.asm.p_utg.fasta /data/home/fl329/data/Salvinia_molesta_HIC/raw_data/DTG_OmniC_941_R1.fastq.gz /data/home/fl329/data/Salvinia_molesta_HIC/raw_data/DTG_OmniC_941_R2.fastq.gz > S_molesta_HiC_scaff_Omic941.sam
+samtools view -S -b --threads 60 S_molesta_HiC_scaff_Omic941 > S_molesta_HiC_scaff_Omic941
+bwa mem -t 60 -5SP /data/home/fl329/data/Salvinia_molesta_HIC/Salvinia_molesta_Hifi.asm.p_utg.fasta /data/home/fl329/data/Salvinia_molesta_HIC/raw_data/DTG_OmniC_942_R1.fastq.gz /data/home/fl329/data/Salvinia_molesta_HIC/raw_data/DTG_OmniC_942_R2.fastq.gz > S_molesta_HiC_scaff_Omic942.sam
+
+awk '(NR==1) {printf("@HD\tVN:1.6\tSO:unknown\n");}{print}' 
+
+bam polis --in S_molesta_HiC_scaff_Omic940 --out S_molesta_HiC_scaff_Omic940_header --HD "@HD VN:1.19 SO:unknown"
+bam polis --in S_molesta_HiC_scaff_Omic941 --out S_molesta_HiC_scaff_Omic941_header --HD "@hd VN:1.9 SO:coordinate"
+bam polis --in S_molesta_HiC_scaff_Omic942 --out S_molesta_HiC_scaff_Omic942_header --HD "@hd VN:1.9 SO:coordinate"
+
+samtools merge -f S_molesta_HiC_merged S_molesta_HiC_scaff_Omic940 S_molesta_HiC_scaff_Omic942 S_molesta_HiC_scaff_Omic941 
+
+##Sam to
+bwa mem -t 60 -5SP /data/home/fl329/data/Salvinia_molesta_HIC/Salvinia_molesta_Hifi.asm.p_utg.fasta /data/home/fl329/data/Salvinia_molesta_HIC/raw_data/DTG_OmniC_940_R1.fastq.gz /data/home/fl329/data/Salvinia_molesta_HIC/raw_data/DTG_OmniC_940_R2.fastq.gz > S_molesta_HiC_scaff_Omic940.sam
+
+for file in ./*.sam
+do
+    echo "Convert $file to to"
+    name=`basename $file .sam`
+    samtools view -S -b --threads 60 $file > $name
+done
+
+##Sorting files
+for file in ./*
+do
+    echo "Sorting $file to sorted"
+    name=`basename $file `
+    samtools sort $file > $name_sorted
+done
+
+samtools merge -f -b name_list.txt Salvinia_molesta_HiC_scaffold_merged
+samtools sort Salvinia_molesta_HiC_scaffold_merged
+
+rm $file
+
+## Making synteny plot for S. molesta using proteins from cucullata - #CONTIG FILE 1st run
+## Scripts from FWL
+## make a miniprot index
+~/bin/miniprot/miniprot -t8 -d Salvinia_molesta_1st.p.ctg.mpi ./Salvinia_molesta_Hifi.asm.p_ctg.fasta
+
+## align the cucullata proteins to the genome and output as gff
+~/bin/miniprot/miniprot --gff-only -t 15 Salvinia_molesta_1st.p.ctg.mpi Salvinia_cucullata.protein.highconfidence_v1.2.fasta > Salvinia_molesta_cucullata_1st.p.ctg.gff
+
+## extract cds from the gff
+gffread Salvinia_molesta_cucullata_1st.p.ctg.gff -g ~/Salvinia_molesta/hifiasm_assembly/1st_run_diploid/Salvinia_molesta_Hifi.asm.p_ctg.fasta -x Salvinia_molesta_cucullata_1st.cds -y Salvinia_molesta_cucullata_1st.prot.fa -M -K
+
+## format gff and turn it into bed 
+python -m jcvi.formats.gff bed --type=mRNA --key=ID Salvinia_molesta_cucullata_1st.p.ctg.gff > Salvinia_molesta_cucullata_1st.bed
+
+## activate my mcscan conda package
+conda activate /home/fay-wei/bin/miniconda3/envs/jcvi
+
+## format the fasta 
+python -m jcvi.formats.fasta format Salvinia_molesta_cucullata_1st.cds S_molesta_cucullata_1st_format
+
+## run mcscan self self synteny analysis
+python -m jcvi.compara.catalog ortholog Salvinia_molesta_cucullata_1st Salvinia_molesta_cucullata_1st --no_strip_names
+
+python -m jcvi.compara.synteny depth --histogram Salvinia_molesta_cucullata_1st.Salvinia_molesta_cucullata_1st.anchors
+python -m jcvi.compara.synteny depth --histogram Salvinia_molesta_cucullata_1st.Salvinia_molesta_cucullata_1st.anchors
+
+
+#######################
+#######################
+##Making the repetittive element bed file for circos
+gff2bed < SG2.fasta.mod.EDTA.TEanno.gff3 > SG2_TE.bed
+gff2bed < SG1.fasta.mod.EDTA.TEanno.gff3 > SG1_TE.bed
+
+awk '{print $1, $2, $3}' SG1_TE.bed > SG1_final_bed_circos.txt  
+awk '{print $1, $2, $3}' SG2_TE.bed > SG2_final_bed_circos.txt  
+awk '{print $1, $2, $3}' S_molesta.bed > Smolesta.txt  
+
+awk 'NR >= 3 { $4 = $3 - $2 } 1' <SG1_final_bed_circos.txt > magia.txt
+sed 's/ /   /g' magia.txt > SG1_bed_circos.txt
+
+awk 'NR >= 3 { $4 = $3 - $2 } 1' <SG2_final_bed_circos.txt > magia.txt
+sed 's/ /   /g' magia.txt > SG2_bed_circos.txt
+
+awk 'NR >= 3 { $4 = $3 - $2 } 1' <Smolesta.txt > magia.txt
+sed 's/ /   /g' magia.txt > Smolesta_genes_histogram_circos.txt
+
+sed 's/Chr_/sm/g' S_molesta_TE.bed > bananal.bed
+sed 's/Chr_/sm/g' Smolesta_genes_histogram_circos.txt > passada.bed
+
+#######################
+#######################
+#######################
+#######################
+
+
+##Create a "fastq" folder that contains the raw Hi-C data
+mkdir fastq
+##Run juicer. Juicer can run on AWS,SLURM or UGER but we are using the CPU one!!!!!!!!!
+##Dont forge to download juicer_tools.jar on the wiki of the repository!!!!!
+##I had to change the path for all scripts location, and put them outside the common folder!
+##Also had to change the juicer_tools path for juicer_tools.jar to update the version on the name!!
+
+bwa index Salvinia_molesta_Hifi.asm.p_ctg.fasta
+/home/fl329/data/Salvinia_molesta_HIC/juicer-1.6/CPU/generate_site_positions.py DpnII draft Salvinia_molesta_Hifi.asm.p_ctg.fasta
+/home/fl329/data/Salvinia_molesta_HIC/juicer-1.6/CPU/juicer_edited.sh -g draft -s DpnII -z Salvinia_molesta_Hifi.asm.p_ctg.fasta -y draft_DpnII.txt -p assembly -t 60 2>error
+/home/fl329/data/Salvinia_molesta_HIC/juicer-1.6/CPU/juicer_edited.sh -g Salvinia_molesta_Hifi.asm.p_ctg.fasta -s DpnII -y draft_DpnII.txt -z Salvinia_molesta_Hifi.asm.p_ctg.fasta -p assembly -t 60 2>error_ctg
+cd aligned
+bash ~/bin/3d-dna-master/run-asm-pipeline.sh --editor-repeat-coverage 10  Salvinia_molesta_Hifi.asm.p_ctg.fasta merged_nodups.txt 2>error_3Dna
+bash ~/bin/3d-dna-master/run-asm-pipeline-post-review.sh -r Salvinia_molesta_Hifi.asm.p_ctg.fasta ../merged_nodups.txt &>log
+
+
+##https://groups.google.com/g/3d-genomics/c/ngRL5BK9C7M/m/WATSimYUAQAJ
+##Awk the p.utg assembly
+awk -f /home/fl329/data/Salvinia_molesta_HIC/3d-dna-master/utils/wrap-fasta-sequence.awk /home/fl329/data/Salvinia_molesta_HIC/HIC_raw_reads/Salvinia_molesta_Hifi.asm.p_utg.fasta > ./draft_wrap.fasta 2>error_draft
+
+bioawk -c fastx '{ print $name, length($seq) }' < S_molesta_scaffold_1kk_ctg.fasta > length_scaffold.txt
+
+##Running mismatch on the 3Ddna Coverage 10 utg
+/home/fl329/data/Salvinia_molesta_HIC/3d-dna-master/edit/run-mismatch-detector.sh -w 83333 -n 1666 /home/fl329/data/Salvinia_molesta_HIC/utg_HIC/coverage_3D_10/Salvinia_molesta_Hifi.asm.p_utg.rawchrom.hic
+/home/fl329/data/Salvinia_molesta_HIC/3d-dna-master/edit/run-mismatch-detector.sh /home/fl329/data/Salvinia_molesta_HIC/utg_HIC/coverage_3D_10/
+/home/fl329/data/Salvinia_molesta_HIC/3d-dna-master/edit/run-coverage-analyzer.sh -w 83333 -n 1666 /home/fl329/data/Salvinia_molesta_HIC/utg_HIC/coverage_3D_10/Salvinia_molesta_Hifi.asm.p_utg.rawchrom.hic
+##This created a wig file
+/home/fl329/data/Salvinia_molesta_HIC/3d-dna-master/edit/run-coverage-analyzer.sh -w 83333 /home/fl329/data/Salvinia_molesta_HIC/utg_HIC/aligned/draft_wrap.0.hic
+
+#####################
+#####################
+#####################
+#####################
+##Blobtools - make blast out file, file for coverage and that's it
+bwa-mem2 mem -t 60 /home/fl329/data/Salvinia_molesta_HIC/Salvinia_molesta_Hifi.asm.p_utg.fasta /home/fl329/data/Salvinia_molesta_HIC/Salvinia_molesta_hif_cat.fastq.gz > Salvinia_molesta_p_1st_bwa.utg.sam
+
+~/bin/bwa-mem2-2.2.1_x64-linux/bwa-mem2 mem -t 5 ~/Salvinia_molesta/hifiasm_assembly/1st_run_diploid/Salvinia_molesta_Hifi.asm.p_utg.fasta ~/Salvinia_molesta/Salvinia_molesta_hif_cat.fastq.gz > Salvinia_molesta_p_1st_bwa.utg.sam 2>
+bwa-mem2 mem -t 30 ~/Salvinia_molesta/hifiasm_assembly/1st_run_diploid/Salvinia_molesta_Hifi.asm.p_utg.fasta ~/Salvinia_molesta/Salvinia_molesta_hif_cat.fastq.gz > Salvinia_molesta_p_1st_bwa.utg.sam
+bwa mem -t 20 ~/Salvinia_molesta/hifiasm_assembly/1st_run_diploid/Salvinia_molesta_Hifi.asm.p_utg.fasta ~/Salvinia_molesta/Salvinia_molesta_hif_cat.fastq.gz > Salvinia_molesta_p_1st_bwa.utg.sam
+
+samtools view Salvinia_molesta_p_1st_bwa.utg.sam > Salvinia_molesta_p_1st_bwa.utg 
+samtools sort Salvinia_molesta_p_1st_bwa.utg > Salvinia_molesta_p_1st_bwa_sorted.utg
+conda deactivate
+diamond blastx --threads 35 -d /home/ps997/blastdbs/nr/nr.dmnd -q ~/Salvinia_molesta/hifiasm_assembly/1st_run_diploid/Salvinia_molesta_Hifi.asm.p_utg.fasta -o Salvinia_molesta_1st_diamond_p_utg.tsv --no-unlink -f 6 -k0 --max-target-seqs 1 --evalue 1e-25
+
+##Use minimap2 for aligning - make index and then run
+minimap2 -a -x map-hifi ../Salvinia_molesta_Hifi.asm.p_utg.fasta ~/Salvinia_molesta/Salvinia_molesta_hif_cat.fastq.gz &
+minimap2 -t 50 -a -I8g -x map-hifi ../Salvinia_molesta_Hifi.asm.p_utg.fasta ~/Salvinia_molesta/Salvinia_molesta_hif_cat.fastq.gz > Salvinia_molesta_p_1st_minimap.utg.sam &
+minimap2 -t 60 -a -I8g -x map-hifi /data/home/fl329/data/Salvinia_molesta_HIC/Salvinia_molesta_Hifi.asm.p_utg.fasta /data/home/fl329/data/Salvinia_molesta_HIC/Salvinia_molesta_hif_cat.fastq.gz > Salvinia_molesta_p_1st_minimap.utg.sam &
+minimap2 -t 30 -a -I8g -x map-hifi Salvinia_molesta_Hifi.asm.p_utg.fasta ~/Salvinia_molesta/Salvinia_molesta_hif_cat.fastq.gz > Salvinia_molesta_p_6th_minimap.utg.sam 2>error_minimap 
+samtools view -@ 30 -h Salvinia_molesta_p_6th_minimap.utg.sam -o Salvinia_molesta_p_6th_minimap.utg
+samtools sort Salvinia_molesta_p_6th_minimap.utg > Salvinia_molesta_p_6th_minimap.utg_sorted
+
+##Use kraken output for contig ID + taxID + Fake e value (1.00E-35)
+## Using kraken results output for blast.out file
+
+#!/usr/bin/env python
+with open('Salvinia_molesta_Hifi.asm.p_utg.results', 'r') as input_file:
+    # Open a new file for writing the extracted columns
+    with open('extracted_columns.txt', 'w') as output_file:
+        # Iterate through each line in the input file
+        for line in input_file:
+            # Split the line into columns by tabs
+            columns = line.strip().split('\t')
+            # Retrieve the second and third columns
+            second_column = columns[1]
+            third_column = columns[2]
+            # Write the second and third columns to the output file
+            output_file.write(f"{second_column}\t{third_column}\n")
+
+print("Extraction complete. Results written to 'extracted_columns.txt'.")
+
+blobtools create -i ~/Salvinia_molesta/hifiasm_assembly/1st_run_diploid/Salvinia_molesta_Hifi.asm.p_utg.fasta -b Salvinia_molesta_p_1st_minimap.utg_sorted -t ~/Salvinia_molesta/hifiasm_assembly/kraken/1st_run/parsing/kraken_contigID_taxID_fakeEvalue.out -o S_molesta_blob &
+blobtools view -i S_molesta_blob.blobDB.json && \
+blobtools plot -i S_molesta_blob.blobDB.json
+
+blobtools create -i ~/Salvinia_molesta/hifiasm_assembly/3rd_run/Salvinia_molesta_Hifi.asm.p_utg.fa -b Salvinia_molesta_p_3rd_bwa_sorted.utg -t kraken_contigID_taxID_fakeEvalue.out -o S_molesta_3rd_blob &
+blobtools view -i S_molesta_3rd_blob.blobDB.json && \
+blobtools plot -i S_molesta_3rd_blob.blobDB.json
+
+blobtools create -i ~/Salvinia_molesta/hifiasm_assembly/6th_run_no_BAC/Salvinia_molesta_Hifi.asm.p_utg.fasta -b Salvinia_molesta_p_6th_minimap.utg_sorted -t kraken_6th_extracted_blobtools.out -o S_molesta_6th_blob 2>error_blob
+blobtools view -i S_molesta_6th_blob.blobDB.json && \
+blobtools plot -i S_molesta_6th_blob.blobDB.json
+
+blobtools create -i ~/Salvinia_molesta/sub_phaser/jordan-uni4291-mb-hirise-eh8fi__01-30-2024__hic_output.fasta -b dovetail_kraken_minimap.sorted -t dovetail_kraken.out -o dovetail_blob 2>error_dove
+blobtools view -i dovetail_blob.blobDB.json && \
+blobtools plot -i dovetail_blob.blobDB.json
+
+
+~/bin/KMC/KMC-master/bin/kmc -k21 -t20 -m64 -ci1 -cs10000000 ~/Salvinia_molesta/Salvinia_molesta_hif_cat.fastq.gz kmcdb ./
+~/bin/KMC/KMC-master/bin/kmc_tools transform kmcdb histogram kmcdb.hist -cx10000000
+
+~/bin/genomescope2.0/genomescope.R -i kmcdb.hist -k 21 -o kmer_21_p2 -p 2
+~/bin/genomescope2.0/genomescope.R -i kmcdb.hist -k 21 -o kmer_21_p5 -p 5
+
+
+##2nd try of kmc 100k to see if used the wrong cut-off so I exclued the 33 coverage peak
+~/bin/KMC/KMC-master/bin/kmc -k21 -t20 -m64 -ci1 -cs100000 ~/Salvinia_molesta/Salvinia_molesta_hif_cat.fastq.gz kmcdb ./
+
+~/bin/KMC/KMC-master/bin/kmc_tools transform kmcdb histogram kmcdb.hist -cx100000
+
+L=$(~/bin/smudgeplot-master/exec/smudgeplot.py cutoff kmcdb.hist L)
+U=$(~/bin/smudgeplot-master/exec/smudgeplot.py cutoff kmcdb.hist U)
+echo $L
+echo $U
+
+~/bin/KMC/KMC-master/bin/kmc_tools transform kmcdb -ci"$L" -cx"$U" reduce kmcdb_L"$L"_U"$U"
+
+~/bin/KMC/KMC-master/bin/smudge_pairs kmcdb_L"$L"_U"$U" kmcdb_L"$L"_U"$U"_coverages.tsv kmcdb_L"$L"_U"$U"_pairs.tsv > kmcdb_L"$L"_U"$U"_familysizes.tsv
+
+~/bin/smudgeplot-master/exec/smudgeplot.py plot kmcdb_L"$L"_U"$U"_coverages.tsv
+
+
+##Using KatComp to compare the kmer distriution of raw reads kmer vs assembly kmer distribution
+##BE AWARE OF THE HIDDEN FILES ktab.1!!!!!!!!!!!!!!!!!!
+FastK -k51 -c -t -v -M200 -T20 -P./ ~/Salvinia_molesta/Salvinia_molesta_hif_cat.fastq
+~/bin/MERQURY.FK-main/CNplot -f -T30 Salvinia_molesta_hif_cat.ktab Salvinia_molesta_Hifi.asm.p_utg.fasta teste
+Histex -G Salvinia_molesta_hif_cat.hist > Salvinia_molesta_hif_cat_histex.hist
+
+##FastK on dovetail 
+##Fastk on 1st assembly
+FastK -k51 -c -t -v -M200 -T20 -P./ Salvinia_molesta_Hifi.asm.p_utg.fasta
+Histex -G Salvinia_molesta_Hifi.asm.p_utg.hist > Salvinia_molesta_Hifi.asm.p_utg.histex.hist
+/home/fay-wei/bin/jellyfish-2.2.5/bin/jellyfish count Salvinia_molesta_Hifi.asm.p_utg.fasta -C -m 51 -s 5G -t 20 -o reads_51.jf
+/home/fay-wei/bin/jellyfish-2.2.5/bin//jellyfish histo -t 10 reads_51.jf > reads_51.histo
+
+/home/fay-wei/bin/jellyfish-2.2.5/bin/jellyfish count Salvinia_molesta_Hifi.asm.p_utg.fasta -C -m 21 -s 5G -t 20 -o reads_21.jf
+/home/fay-wei/bin/jellyfish-2.2.5/bin//jellyfish histo -t 10 reads_21.jf > reads_21.histo
+
+##For CNplot, the kmer size of the .ktab and the assembly have to be same!!!!!!!!!!!!!!!!!!!!!!!
+~/bin/MERQURY.FK-main/CNplot -fl -T20 Salvinia_molesta_hif_cat.ktab Salvinia_molesta_Hifi.asm.p_utg.fasta CNplot_1st_run
+~/bin/MERQURY.FK-main/CNplot -fl -T20 -z Salvinia_molesta_hif_cat.ktab Salvinia_molesta_Hifi.asm.p_utg.fasta CNplot_zzzz_run
+
+##Check kmer distribution on raw reads vs 6th assembly
+FastK -k51 -c -v -T20 -P./ S_molesta_raw_reads_kraken_extract.fasta
+~/bin/MERQURY.FK-main/CNplot -fl -T20 S_molesta_raw_reads_kraken_extract.fasta.ktab Salvinia_molesta_Hifi.asm.p_utg.fasta CNplot_kraken_run
+
+FastK -k21 -c -v -T20 -P./ S_molesta_raw_reads_kraken_extract.fasta.gz
+Histex -G S_molesta_raw_reads_kraken_extract.hist > S_molesta_raw_reads_kraken_extract.fasta_21_histex.hist
+ 
+##Using kat for that
+
+##Let`s try to phase the company's chromosomes
+cp /home/hornworts/Salvinia_Primary_Assembly_01302024/jordan-uni4291-mb-hirise-eh8fi__01-30-2024__hic_output.fasta ./
+Jordan doenst know how to write his headers....
+
+seqkit replace jordan-uni4291-mb-hirise-eh8fi__01-30-2024__hic_output.fasta -p \; -r _ > jordan_fixed.fasta
+seqkit replace jordan_fixed.fasta -p \= -r _ > jordan_fixed_fixed.fasta
+
+subphaser -i jordan_fixed_fixed.fasta -c dovetail_3.config 2>error_dovetail | tee ${prefix}.log.$ 
+subphaser -i jordan_fixed_fixed.fasta -c dovetail_3.config -k 21 2>error_dovetail_kmer21 | tee ${prefix}.log.$ 
+subphaser -i jordan_fixed_fixed.fasta -c dovetail_3.config -k 21 2>error_dovetail_kmer21 | tee ${prefix}.log.$ 
+
+
+##dovetail kraken
+kraken2 -db /home/ps997/krakenDBs/kraken_nt /home/hornworts/Salvinia_Primary_Assembly_01302024/jordan-uni4291-mb-hirise-eh8fi__01-30-2024__hic_output.fasta --threads 30 --output dovetail_kraken.results --report dovetail_kraken.report
+
+conda activate bioconda
+
+minimap2 -t 30 -a -I8g -x map-hifi /home/hornworts/Salvinia_Primary_Assembly_01302024/jordan-uni4291-mb-hirise-eh8fi__01-30-2024__hic_output.fasta ~/Salvinia_molesta/Salvinia_molesta_hif_cat.fastq.gz > dovetail_kraken_minimap.sam &
+samtools view -@ 40 -h dovetail_kraken_minimap.sam -o dovetail_kraken_minimap
+
+samtools sort -@ 40 dovetail_kraken_minimap > dovetail_kraken_minimap.sorted
+
+##It works on test data
+~/bin/ploidyNGS/ploidyNGS/ploidyNGS.py -g -o 6th_kraken -b ~/Salvinia_molesta/hifiasm_assembly/6th_run_no_BAC/Salvinia_molesta_p_6th_minimap.utg_sorted 2>error_6th_kraken
+~/bin/ploidyNGS/ploidyNGS/ploidyNGS.py -g -o S_molesta_guess -b Salvinia_molesta_p_1st_minimap.utg_sorted 2>error_S_molesta_guess 
+~/bin/ploidyNGS/ploidyNGS/ploidyNGS.py -g -o dovetail -b ~/Salvinia_molesta/dovetail_kraken/dovetail_kraken_minimap.sorted 2>error_dovetail
+
+##Separating each subgenome from the chromosome assembly (SG1 and SG2)
+seqkit grep -f SG1_name_list.txt ~/Salvinia_molesta/sub_phaser/jordan_fixed_fixed.fasta -o SG1.fasta
+seqkit grep -f SG2_name_list.txt ~/Salvinia_molesta/sub_phaser/jordan_fixed_fixed.fasta -o SG2.fasta
+
+##Mapping each subgenome to the raw reads and compare coverage
+
+minimap2 -t 20 -a -I8g -x map-hifi SG1.fasta ~/Salvinia_molesta/Salvinia_molesta_hif_cat.fastq.gz > SG1_minimap.sam
+samtools view --threads 20 -b SG1_minimap.sam > SG1 
+samtools sort --threads 20 SG1 -o SG1.sorted
+samtools depth -a SG1.sorted | awk '{sum+=$3; sumsq+=$3*$3} END { print "Average = ",sum/NR; print "Stdev = ",sqrt(sumsq/NR - (sum/NR)**2)}' > SG1_depth.txt
+
+samtools coverage -a SG1.sorted | awk '{sum+=$3; sumsq+=$3*$3} END { print "Average = ",sum/NR; print "Stdev = ",sqrt(sumsq/NR - (sum/NR)**2)}' > SG1_depth.txt
+
+minimap2 -t 20 -a -I8g -x map-hifi SG2.fasta ~/Salvinia_molesta/Salvinia_molesta_hif_cat.fastq.gz > SG2_minimap.sam
+samtools view --threads 20 -b SG2_minimap.sam > SG2 
+samtools sort --threads 20 SG2 -o SG2.sorted
+samtools depth -a SG2.sorted | awk '{sum+=$3; sumsq+=$3*$3} END { print "Average = ",sum/NR; print "Stdev = ",sqrt(sumsq/NR - (sum/NR)**2)}' > SG2_depth.txt
+
+##Instead of separating the haplotypes, because of duplicates, do the mapping on the whole dovetail assembly, and based on the chromosome headers, split the haplotypes.
+##With the two files you can get overall depth, but also, do coverage estimation for EACH INDIVIDUAL chr.
+
+List=$(cat "SG1_name_list.txt")
+for i in $List;
+ do
+     samtools view -@ 40 -b -o $i ~/Salvinia_molesta/sub_phaser/dovetail_fixed_header_minimap.sorted $i
+done
+
+List=$(cat "SG2_name_list.txt")
+for i in $List;
+ do
+     samtools view -@ 40 -b -o $i ~/Salvinia_molesta/sub_phaser/dovetail_fixed_header_minimap.sorted $i
+done
+
+##retirieving the depth for each chromosome
+paste SG1_name_list.txt | while read ;
+do
+samtools depth -a $} | awk '{sum+=$3; sumsq+=$3*$3} END { print "Average = ",sum/NR; print "Stdev = ",sqrt(sumsq/NR - (sum/NR)**2)}' > ./$}_depth.txt
+done
+
+paste SG2_name_list.txt | while read ;
+do
+samtools depth -a $} | awk '{sum+=$3; sumsq+=$3*$3} END { print "Average = ",sum/NR; print "Stdev = ",sqrt(sumsq/NR - (sum/NR)**2)}' > ./$}_depth.txt
+done
+
+##Retireving reads for each merged  file from each haplotype
+samtools fastq -@10 -o SG1_raw_reads.fastq SG1_cat_after_depth > SG1_raw_reads.fastq
+samtools fastq -@10 -o SG2_raw_reads.fastq SG2_cat_after_depth > SG2_raw_reads.fastq
+
+~/bin/jellyfish-2.2.5/bin/jellyfish count SG1_raw_reads.fastq -C -m 21 -s 5G -t 10 -o reads_SG1_21.jf
+~/bin/jellyfish-2.2.5/bin//jellyfish histo -t 10 reads_SG1_21.jf > reads_SG1_21.histo
+
+~/bin/jellyfish-2.2.5/bin/jellyfish count SG2_raw_reads.fastq -C -m 21 -s 5G -t 10 -o reads_SG2_21.jf
+~/bin/jellyfish-2.2.5/bin//jellyfish histo -t 10 reads_SG2_21.jf > reads_SG2_21.histo
+
+~/bin/genomescope2.0/genomescope.R -i reads_SG1_21.histo -k 21 -o kmer_21
+~/bin/genomescope2.0/genomescope.R -i reads_SG2_21.histo -k 21 -o kmer_21
+
+##Busco on each subgenome
+~/bin/compleasm/compleasm.py run -t 20 -l viridiplantae_odb10 -a ~/Salvinia_molesta/sub_phaser/1st_round_kmer_15/minimap/SG1/SG1.fasta -o SG1_compleasm &
+~/bin/compleasm/compleasm.py run -t 20 -l viridiplantae_odb10 -a ~/Salvinia_molesta/sub_phaser/1st_round_kmer_15/minimap/SG2/SG2.fasta -o SG2_compleasm &
+
+~/bin/compleasm/compleasm.py protein -t 20 -l viridiplantae_odb12 -p ~/Salvinia_molesta/SG1/annotation/SG1_braker/SG1.prot.fa  -o sg1_prot &
+~/bin/compleasm/compleasm.py protein -t 20 -l viridiplantae_odb12 -p ~/Salvinia_molesta/SG1/annotation/SG1_braker/SG1.prot.fa  -o sg1_prot &
+
+~/bin/compleasm/compleasm.py run -t 20 -l viridiplantae_odb12 -a ~/Salvinia_molesta/SG1/SG1.fasta -o SG1_dna_12 &
+~/bin/compleasm/compleasm.py run -t 20 -l viridiplantae_odb12 -a ~/Salvinia_molesta/SG2/SG2.fasta -o SG2_dna_12 &
+~/bin/compleasm/compleasm.py run -t 20 -l viridiplantae_odb12 -a ~/Salvinia_molesta/S_molesta_cleaned_46_chr.fasta -o molesta_dna_12 &
+
+
+minimap2 -t 40 -a -I8g -x map-hifi jordan_fixed_fixed.fasta ~/Salvinia_molesta/Salvinia_molesta_hif_cat.fastq.gz > dovetail_fixed_header.sam
+samtools view --threads 40 -b dovetail_fixed_header.sam > dovetail_fixed_header_minimap 
+samtools sort --threads 40 dovetail_fixed_header_minimap -o dovetail_fixed_header_minimap.sorted
+
+###Doing Juicer for each subgenome
+~/data/Salvinia_molesta_HIC/juicer-1.6/CPU/generate_site_positions.py DpnII draft SG1.fasta
+~/data/Salvinia_molesta_HIC/juicer-1.6/CPU/generate_site_positions.py DpnII draft SG2.fasta
+
+~/data/Salvinia_molesta_HIC/juicer-1.6/CPU/juicer_edited.sh -g SG1.fasta -s DpnII -y draft_DpnII.txt -z SG1.fasta -p assembly -t 30 2>error_SG1
+~/data/Salvinia_molesta_HIC/juicer-1.6/CPU/juicer_edited.sh -g SG2.fasta -s DpnII -y draft_DpnII.txt -z SG2.fasta -p assembly -t 30 2>error_SG2
+
+##https://groups.google.com/g/3d-genomics/c/ngRL5BK9C7M/m/WATSimYUAQAJ
+##Awk the assembly
+awk -f /home/fl329/data/Salvinia_molesta_HIC/3d-dna-master/utils/wrap-fasta-sequence.awk SG1.fasta > ./draft_wrap.fasta 2>error_draft
+awk -f /home/fl329/data/Salvinia_molesta_HIC/3d-dna-master/utils/wrap-fasta-sequence.awk SG2.fasta > ./draft_wrap.fasta 2>error_draft
+
+##Run the 3d-scaffolder from the assemvly using the dedup file that is the output from juicer
+bash /home/fl329/data/Salvinia_molesta_HIC/3d-dna-master/run-asm-pipeline.sh ../draft_wrap.fasta merged_nodups.txt 2>error_3DnaSG1
+bash /home/fl329/data/Salvinia_molesta_HIC/3d-dna-master/run-asm-pipeline.sh ../draft_wrap.fasta merged_nodups.txt 2>error_3DnaSG2
+
+bash /home/fl329/data/Salvinia_molesta_HIC/3d-dna-master/run-asm-pipeline.sh --editor-repeat-coverage 5  ../draft_wrap.fasta /home/fl329/data/Salvinia_molesta_HIC/utg_HIC/aligned/merged_nodups.txt 2>error_3d_editor
+bash /home/fl329/data/Salvinia_molesta_HIC/3d-dna-master/run-asm-pipeline.sh --editor-repeat-coverage 5  ../draft_wrap.fasta /home/fl329/data/Salvinia_molesta_HIC/utg_HIC/aligned/merged_nodups.txt 2>error_3d_editor
+
+##Making synteny for each haplotype
+cp ~/Salvinia_molesta/hifiasm_assembly/1st_run_diploid/miniprot/1st_run_p_ctg/Salvinia_cucullata.cds ./
+
+~/bin/miniprot/miniprot -t20 -d SG1.mpi ~/Salvinia_molesta/sub_phaser/1st_round_kmer_15/minimap/SG1/SG1.fasta
+~/bin/miniprot/miniprot -t20 -d SG2.mpi ~/Salvinia_molesta/sub_phaser/1st_round_kmer_15/minimap/SG2/SG2.fasta
+~/bin/miniprot/miniprot -t20 -d SG2.mpi ~/Salvinia_molesta/SG2/SG2.fasta
+
+## align the cucullata proteins to the genome and output as gff
+~/bin/miniprot/miniprot --gff-only -t 20 SG1.mpi /home/fay-wei/data/_Salviniales_genomes/Salvinia/Salvinia_cucullata.protein.highconfidence_v1.2.fasta > SG1.gff
+~/bin/miniprot/miniprot --gff-only -t 20 SG2.mpi /home/fay-wei/data/_Salviniales_genomes/Salvinia/Salvinia_cucullata.protein.highconfidence_v1.2.fasta > SG2.gff
+
+## extract cds from the gff
+gffread SG1.gff -g ~/Salvinia_molesta/sub_phaser/1st_round_kmer_15/minimap/SG1/SG1.fasta -x SG1.cds  -y SG1.prot.fa -M -K
+gffread SG2.gff -g ~/Salvinia_molesta/sub_phaser/1st_round_kmer_15/minimap/SG2/SG2.fasta -x SG2.cds  -y SG2.prot.fa -M -K
+gffread SG2_longest_isoform.gff3 -g ~/Salvinia_molesta/SG2/SG2.fasta -x SG2.cds  -y SG2.prot.fa -M -K
+
+## activate my mcscan conda package
+conda activate /home/fay-wei/bin/miniconda3/envs/jcvi
+
+## format gff and turn it into bed 
+python -m jcvi.formats.gff bed --type=mRNA --key=ID SG1.gff > SG1.bed
+python -m jcvi.formats.gff bed --type=mRNA --key=ID SG2.gff > SG2.bed
+
+python -m jcvi.formats.gff bed --type=mRNA --key=ID SG2_longest_isoform.gff3 > SG2.2bed
+
+## format the fasta 
+python -m jcvi.formats.fasta format SG1.cds.fa SG1.cds
+python -m jcvi.formats.fasta format SG2.cds.fa SG2.cds
+
+## run mcscan self self synteny analysis
+python -m jcvi.compara.catalog ortholog SG1 SG1
+python -m jcvi.compara.catalog ortholog SG2 SG2
+
+python -m jcvi.compara.synteny depth --histogram SG1.SG1.anchors
+
+####
+####
+##Running jcvi for each subgenome vs cucullata(looking for 1:1 ratio)
+## activate my mcscan conda package
+conda activate /home/fay-wei/bin/miniconda3/envs/jcvi
+
+## format gff and turn it into bed 
+python -m jcvi.formats.gff bed --type=mRNA --key=ID SG1.gff > SG1.bed
+python -m jcvi.formats.gff bed --type=mRNA --key=ID SG2.gff > SG2.bed
+
+python -m jcvi.formats.gff bed --type=mRNA --key=ID SG2_longest_isoform.gff3 > SG2.2bed
+
+## format the fasta 
+python -m jcvi.formats.fasta format SG1.cds.fa SG1.cds
+python -m jcvi.formats.fasta format SG2.cds.fa SG2.cds
+
+## run mcscan self self synteny analysis
+python -m jcvi.compara.catalog ortholog SG1 SG1 
+python -m jcvi.compara.catalog ortholog SG2 SG2
+
+python -m jcvi.compara.synteny depth --histogram SG1.SG1.anchors
+
+#######################
+#######################
+#######################
+##Gene annotation for ycr_fwl_assembly
+~/bin/miniprot/miniprot -t20 -d S_molesta.mpi ../S_molesta_scaffold_1kk_ctg.fasta
+
+~/bin/miniprot/miniprot --gff-only -t 20 S_molesta.mpi /home/fay-wei/data/_Salviniales_genomes/Salvinia/Salvinia_cucullata.protein.highconfidence_v1.2.fasta > S_molesta.gff
+
+## extract cds from the gff
+gffread S_molesta.gff -g ../S_molesta_scaffold_1kk_ctg.fasta -x S_ycr_fwl.cds  -y S_ycr_fwl.prot.fa -M -K
+
+## activate my mcscan conda package
+conda activate /home/fay-wei/bin/miniconda3/envs/jcvi
+
+## format gff and turn it into bed 
+python -m jcvi.formats.gff bed --type=mRNA --key=ID S_molesta.gff > S_ycr_fwl.bed
+
+## format the fasta 
+python -m jcvi.formats.fasta format S_ycr_fwl.cds S_ycr_fwl
+
+## run mcscan self self synteny analysis
+python -m jcvi.compara.catalog ortholog S_ycr_fwl S_ycr_fwl
+
+python -m jcvi.compara.synteny depth --histogram S_ycr_fwl.anchors
+
+subphaser -i ../S_molesta_scaffold_1kk_ctg.fasta -c scaffold_ycr_fwl.config -k 21 2>error_kmer15 | tee ${prefix}.log.$ 
+
+subphaser -i ../S_molesta_scaffold_1kk_ctg_header_edited.fasta -c scaffold_ycr_fwl.config -k 15 2>error_kmer15 | tee ${prefix}.log.$ 
+
+subphaser -i S_molesta_scaffold_1kk_ctg_header_edited.fasta -c scaffold_ycr_fwl.config -nsg 5 -k 15 2>error_kmer15 | tee ${prefix}.log.$ 
+
+subphaser -i S_molesta_scaffold_1kk_ctg_header_edited.fasta -c scaffold_ycr_fwl.config -nsg 2 -k 30 2>error_kmer15 | tee ${prefix}.log.$ 
+
+seqkit replace -p '\w+_\w+_' -r 'Chr_' S_molesta_scaffold_1kk_ctg_header_edited.fasta > try.fasta
+
+################
+################
+#Syteny using our braker annotation
+##USE THE BRAKER_longest_isoform GFF3 FILE!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+## extract cds from the gff
+gffread SG1_longest_isoform.gff3 -g ~/Salvinia_molesta/SG1/SG1.fasta -x SG1.cds  -y SG1.prot.fa -M -K
+gffread SG2_longest_isoform.gff3 -g ~/Salvinia_molesta/SG2/SG2.fasta -x SG2.cds  -y SG2.prot.fa -M -K
+
+## activate my mcscan conda package
+conda activate /home/fay-wei/bin/miniconda3/envs/jcvi
+
+## format gff and turn it into bed 
+python -m jcvi.formats.gff bed --type=mRNA --key=ID SG1_longest_isoform.gff3 > SG1.bed
+python -m jcvi.formats.gff bed --type=mRNA --key=ID SG2_longest_isoform.gff3 > SG2.bed
+
+## format the fasta 
+python -m jcvi.formats.fasta format SG1.cds SG1
+python -m jcvi.formats.fasta format SG2.cds SG2
+
+## run mcscan self self synteny analysis
+python -m jcvi.compara.catalog ortholog SG1 SG1
+python -m jcvi.compara.catalog ortholog SG2 SG2
+
+##Making SG1.SG2the synteny plot
+
+python -m jcvi.compara.catalog ortholog SG1 SG2
+
+##Make the simple file
+python -m jcvi.compara.synteny screen --minspan=30 --simple SG1.SG2.anchors SG1.SG2.anchors.new 
+##Make the synteny plot
+python -m jcvi.graphics.karyotype SG1_SG2_molesta_synteny_seqids SG1_SG2_synteny_layout
+
+python -m jcvi.graphics.karyotype synteny_SG1_SG2_reorganized_seqids SG1_SG2_synteny_layout
+
+################
+##Subg-genomes annotation ycr_fwl
+
+conda activate ~/miniconda3/envs/EDTA2
+
+~/miniconda3/envs/EDTA2/bin/EDTA.pl --genome ../SG2.fasta --step all --overwrite 1 --anno 1 -t 10 2>log_EDTA
+~/miniconda3/envs/EDTA2/bin/EDTA.pl --genome ../SG1.fasta --step all --overwrite 1 --anno 1 -t 20 2>log_EDTA
+
+##Soft masking the EDTA run -- files have to be in the same folder
+perl ~/bin/EDTA/util/make_masked.pl -hardmask 0  -genome SG1.fasta -rmout SG1.fasta.mod.EDTA.RM.out 
+
+perl ~/bin/EDTA/util/make_masked.pl -hardmask 0  -genome SG2.fasta -rmout SG2.fasta.mod.EDTA.RM.out 
+
+###
+##Running EDTA per repeat type on SG1 - the li lab version of EDTA (2.0.1) does not do that, but baby face (2.2) does
+conda activate /home/ps997/miniconda3/envs/EDTA2
+/home/ps997/miniconda3/envs/EDTA2/bin/EDTA.pl --genome ~/Salvinia_molesta/SG1/SG1.fasta  --step all --overwrite 1 --anno 1 -t 20  2>log_EDTA
+
+##Using EDTA2 2.2.0 in baby spore
+~/bin/EDTA-master/EDTA_raw.pl --genome ~/ycr3/SG2/SG2.fasta --type tir --step all --overwrite 1 --anno 1 -t 120  2>log_EDTA_tir
+~/bin/EDTA-master/EDTA_raw.pl --genome ~/ycr3/SG2/SG2.fasta --type ltr --step all --overwrite 1 --anno 1 -t 120  2>log_EDTA_ltr
+~/bin/EDTA-master/EDTA_raw.pl --genome ~/ycr3/SG2/SG2.fasta --type helitron --step all --overwrite 1 --anno 1 -t 120  2>log_EDTA_helitron
+~/bin/EDTA-master/EDTA_raw.pl --genome ~/ycr3/SG2/SG2.fasta --type sine --step all --overwrite 1 --anno 1 -t 120  2>log_EDTA_sine
+
+~/bin/EDTA-master/EDTA.pl --genome ~/ycr3/SG2/SG2.fasta --step filter --overwrite 0 --anno 1 -t 150  2>log_EDTA
+~/bin/EDTA-master/EDTA.pl --genome ../test_genome.fasta --step all --overwrite 1 --anno 1 -t 120  2>log_EDTA
+
+RepeatMasker -pa 20 -dir RepeatMaskerTest -qq -lib SG2.fasta.mod.EDTA.TElib.fa
+
+###Using this to mask chopped SG2 on the li lab (pete's EDTA 2.0.1)
+for file in ./*.fasta
+do
+    echo "masking them $file "
+    name=`basename $file .fasta`
+    /home/ps997/miniconda3/envs/EDTA2/bin/EDTA.pl --genome $name.fasta --step all --overwrite 1 --anno 1 -t 20
+done
+
+
+###########
+###########
+##Compleasm for 'subgenomes'
+~/bin/compleasm/compleasm.py download chlorophyta_odb10
+~/bin/compleasm/compleasm.py run -t 20 -l viridiplantae_odb10 -a ../SG1.fasta -o SG1 &
+~/bin/compleasm/compleasm.py run -t 20 -l viridiplantae_odb10 -a ../SG2.fasta -o SG2 &
+
+######
+##Gene annotation
+conda activate ~/miniconda3/envs/EDTA2
+/miniconda3/envs/EDTA2/bin/EDTA.pl --genome ./S_molesta_cleaned_1kk.fasta --step all --overwrite 1 --anno 1 -t 30 2>log_EDTA
+~/miniconda3/envs/EDTA2/bin/EDTA.pl --genome ./S_molesta_cleaned_46_chr.fasta --step all --overwrite 1 --anno 1 -t 30 2>log_EDTA
+
+~/bin/miniforge3/envs/EDTA2/bin/EDTA.pl --genome ../S_molesta_scaffold_1kk_ctg.fasta --step all --overwrite 1 --anno 1 -t 60 2>log_EDTA
+
+~/bin/EDTA-master/EDTA.pl --genome ../S_molesta_cleaned_1kk.fasta --step all --overwrite 1 --anno 1 -t 190 2>log_EDTA
+~/bin/EDTA-master/EDTA.pl --genome S_molesta_cleaned_46_chr.fasta --step all --overwrite 1 --anno 1 -t 190 2>log_EDTA
+~/bin/EDTA-master/EDTA.pl --genome SG2.fasta --step all --overwrite 1 --anno 1 -t 190 2>log_EDTA
+
+##Running LINE finder on SG1
+/home/ps997/miniconda3/envs/EDTA2/bin/EDTA_raw.pl --genome ~/Salvinia_molesta/SG1/SG1.fasta --type line|sine --step all --overwrite 1 --anno 1 -t 20 2>log_EDTA
+
+perl ~/bin/EDTA/util/make_masked.pl -hardmask 0  -genome SG1.fasta -rmout SG1.fasta.mod.EDTA.RM.out 
+
+##Running SG1 on babyface
+~/bin/EDTA-master/EDTA.pl --genome ../SG1.fasta --step all --overwrite 1 --anno 1 -t 190 2>log_EDTA
+
+fastp -i Leaf1_1.fq.gz -I Leaf1_2.fq.gz -o Leaf1_1.fastp.fq.gz -O Leaf1_2.fastp.fq.gz
+fastp -i Leaf2_1.fq.gz -I Leaf2_2.fq.gz -o Leaf2_1.fastp.fq.gz -O Leaf2_2.fastp.fq.gz
+fastp -i Leaf3_1.fq.gz -I Leaf3_2.fq.gz -o Leaf3_1.fastp.fq.gz -O Leaf3_2.fastp.fq.gz
+fastp -i Root1_1.fq.gz -I Root1_2.fq.gz -o Root1_1.fastp.fq.gz -O Root1_2.fastp.fq.gz 
+fastp -i Root2_1.fq.gz -I Root2_2.fq.gz -o Root2_1.fastp.fq.gz -O Root2_2.fastp.fq.gz 
+fastp -i Root3_1.fq.gz -I Root3_2.fq.gz -o Root3_1.fastp.fq.gz -O Root3_2.fastp.fq.gz 
+
+###
+##HISET for making the allignment between RNAseq and scaffolded genome
+~/bin/hisat2/hisat2-build S_molesta_scaffold_1kk_ctg.fasta genome -p100
+~/bin/hisat2/hisat2-build SG1.fasta genome -p100
+~/bin/hisat2/hisat2-build SG2.fasta genome -p100
+
+##SG1
+~/bin/hisat2/hisat2-build SG1.fasta genome -p100
+~/bin/hisat2/hisat2 --dta -p 180 -x genome -1 Leaf1_1.fastp.fq.gz,Leaf2_1.fastp.fq.gz,Leaf3_1.fastp.fq.gz,Root1_1.fastp.fq.gz,Root2_1.fastp.fq.gz,Root3_1.fastp.fq.gz -2 Leaf1_2.fastp.fq.gz,Leaf2_2.fastp.fq.gz,Leaf3_2.fastp.fq.gz,Root1_2.fastp.fq.gz,Root2_2.fastp.fq.gz,Root3_2.fastp.fq.gz -S S_molesta_scaffold_RNA.sam >
+
+##SG2 - making aligment file for SG2
+~/bin/hisat2/hisat2 --dta -p 180 -x genome -1 Leaf1_1.fastp.fq.gz,Leaf2_1.fastp.fq.gz,Leaf3_1.fastp.fq.gz,Root1_1.fastp.fq.gz,Root2_1.fastp.fq.gz,Root3_1.fastp.fq.gz -2 Leaf1_2.fastp.fq.gz,Leaf2_2.fastp.fq.gz,Leaf3_2.fastp.fq.gz,Root1_2.fastp.fq.gz,Root2_2.fastp.fq.gz,Root3_2.fastp.fq.gz -S S_molesta_scaffold_RNA_SG2.sam 
+
+for file in *.sam
+do
+    echo "Convert $file to to"
+    name=`basename $file .sam`
+    samtools view -S -b --threads 180 $file > $name
+done 
+
+samtools sort -@180 S_molesta_scaffold_RNA_SG2 > SG2_RNA
+
+
+for i in *.fastp.fq.gz
+do
+~/bin/hisat2/hisat2 --dta -x genome -U ${i} -p 180 -S ${i}.sam > log_hisat2
+done
+
+samtools sort -@150 S_molesta_scaffold_RNA.merged > S_molesta_RNA_sorted
+
+cp ~/ycr3/RNA/teste/S_molesta_RNA_sorted ./
+
+#
+##Run Braker on the base env of baby
+##softmasked SG1
+singularity exec ~/bin/braker/braker3.sif braker.pl --AUGUSTUS_CONFIG_PATH=/home/ycr3/.augustus --thread=48 --genome=SG1.softmasked.fasta --prot_seq=./Ferns_protein_merged2.fasta --species=SG1_soft_masked --bam=SG1_RNA_sorted.bam --gff3
+
+##softmasked SG2
+singularity exec ~/bin/braker/braker3.sif braker.pl --AUGUSTUS_CONFIG_PATH=/home/ycr3/.augustus --thread=48 --genome=SG2_soft_masked.fasta --prot_seq=Ferns_protein_merged2.fasta --species=SG2_soft_masked_second --bam=SG2_RNA_sorted.bam --gff3
+
+##For some reason Augustus adds * at the end of the sequences
+cat Ferns_protein_merged.fasta | perl -pe 's/\*//;' > Ferns_protein_merged_standard.fasta
+#############
+
+#Measung length of a sequence
+bioawk -c fastx '{ print $name, length($seq) }' < S_molesta_scaffold_1kk_ctg.fasta
+
+##Complesam for haplotypes
+~/bin/compleasm/compleasm.py run -t 30 -l viridiplantae_odb10 -a ../SG1.fasta -o SG1_compleasm
+~/bin/compleasm/compleasm.py run -t 30 -l viridiplantae_odb10 -a ../SG2.fasta -o SG2_compleasm
+
+##kraken on 50 chr to check what the 4 are
+kraken2 -db ~/krakenDBs/kraken_nt ~/Salvinia_molesta/S_molesta_scaffold_1kk_ctg_header_edited.fasta --threads 20 --output S_molesta_chr_50 --report S_molesta_chr_50.report
+
+##Instead of separating the haplotypes, because of duplicates, do the mapping on the whole dovetail assembly, and based on the chromosome headers, split the haplotypes.
+##With the two files you can get overall depth, but also, do coverage estimation for EACH INDIVIDUAL chr.
+List=$(cat "SG1_name_list.txt")
+for i in $List;
+ do
+     samtools view -@ 140 -b -o ~/ycr3/molesta_minimap_chromosome_coverage/SG1/50/$i ~/ycr3/molesta_minimap_chromosome_coverage/S_molesta_scaffold_1kk_sorted $i
+done
+
+List=$(cat "FULL_name_list.txt")
+for i in $List;
+ do
+     samtools view -@ 140 -b -o ~/ycr3/molesta_minimap_chromosome_coverage/FULL/$i ~/ycr3/molesta_minimap_chromosome_coverage/S_molesta_scaffold_1kk_sorted $i
+done
+
+List=$(cat "SG2_name_list.txt")
+for i in $List;
+ do
+     samtools view -@ 140 -b -o ~/ycr3/molesta_minimap_chromosome_coverage/SG2/50/$i ~/ycr3/molesta_minimap_chromosome_coverage/S_molesta_scaffold_1kk_sorted $i
+done
+
+##retirieving the depth for each chromosome
+paste SG1_name_list.txt | while read ;
+do
+samtools depth -a $} | awk '{sum+=$3; sumsq+=$3*$3} END { print "Average = ",sum/NR; print "Stdev = ",sqrt(sumsq/NR - (sum/NR)**2)}' > ./$}_depth.txt
+done
+
+paste SG2_name_list.txt | while read ;
+do
+samtools depth -a $} | awk '{sum+=$3; sumsq+=$3*$3} END { print "Average = ",sum/NR; print "Stdev = ",sqrt(sumsq/NR - (sum/NR)**2)}' > ./$}_depth.txt
+done
+
+paste FULL_name_list.txt | while read ;
+do
+samtools depth -a $} | awk '{sum+=$3; sumsq+=$3*$3} END { print "Average = ",sum/NR; print "Stdev = ",sqrt(sumsq/NR - (sum/NR)**2)}' > ./$}_depth.txt
+done
+
+####
+##Chopping SG2 into individual chromosomes and running EDTA2 on a loop
+~/bin/EDTA-master/EDTA.pl --genome S_molesta_cleaned_46_chr.fasta --step all --overwrite 1 --anno 1 -t 190 2>log_EDTA
+
+awk 'BEGIN{RS=">";FS="\n"} NR>1{fnme=$1".fasta"; print ">" $0 > fnme; close(fnme);}' SG2.fasta
+
+for file in ./*.fasta
+do
+    echo "masking them $file "
+    name=`basename $file .fasta`
+    ~/bin/EDTA-master/EDTA.pl --genome $name.fasta --step all --overwrite 1 --anno 1 -t 20
+done
+
+##Running Easel
+##Test
+nextflow run -hub gitlab PlantGenomicsLab/easel -profile test,singularity --outdir vibes
+##My try of easel - the 36 rate was based on the log file and the hisat alignment (most rna seq, specailly leaf,) -- didnt work
+nextflow run -hub gitlab PlantGenomicsLab/easel -profile singularity \
+    --genome /home/ycr3/SG1.softmasked.fasta \
+    - /home/ycr3/SG1_RNA_sorted \
+    --busco_lineage viridiplantae \
+    --order Viridiplantae \
+    --taxon null \
+    --training_set plant \
+    --outdir SG1_easel \
+    --user_protein /home/ycr3/Ferns_protein_merged2.fasta  \
+    --rate 36 \
+    --max_cpus 140 2>log_easel
+
+##
+##Using AGAT to filter longest isoform from pedricted genes for SG1
+~/bin/AGAT-master/bin/agat_sp_keep_longest_isoform.pl -gff ~/Salvinia_molesta/SG1/annotation/SG1_braker/braker.gff3 -o SG1_longest_isoform.gff3
+~/bin/gffread/gffread -w SG1_longest_isoform.fasta -g ~/Salvinia_molesta/SG1/SG1.fasta SG1_longest_isoform.gff3
+~/bin/compleasm/compleasm.py download viridiplantae_odb10
+~/bin/compleasm/compleasm.py run -t 40 -l viridiplantae_odb10 -a SG1_longest_isoform.fasta -o SG2 &
+
+##SG2
+~/bin/AGAT-master/bin/agat_sp_keep_longest_isoform.pl -gff ~/Salvinia_molesta/SG2/annotation/braker_SG2/braker.gff3 -o SG2_longest_isoform.gff3
+~/bin/gffread/gffread -w SG2_longest_isoform.fasta -g ~/Salvinia_molesta/SG2/SG2.fasta SG2_longest_isoform.gff3
+~/bin/compleasm/compleasm.py download viridiplantae_odb10
+~/bin/compleasm/compleasm.py run -t 40 -l viridiplantae_odb10 -a ../SG2_longest_isoform.fasta -o SG2 &
+~/bin/AGAT-master/bin/agat_convert_sp_gff2bed.pl --gff SG2_longest_isoform.gff3 -o SG2.bed
+
+#########Second braker
+~/bin/AGAT-master/bin/agat_sp_keep_longest_isoform.pl -gff braker.gff3 -o SG2_longest_isoform.gff3
+~/bin/gffread/gffread -w SG2_longest_isoform.fasta -g ~/Salvinia_molesta/SG2/SG2.fasta SG2_longest_isoform.gff3
+~/bin/compleasm/compleasm.py download viridiplantae_odb10
+~/bin/compleasm/compleasm.py run -t 40 -l viridiplantae_odb10 -a ../SG2_longest_isoform.fasta -o SG2 &
+#############
+##Running WGD
+#############
+gffread SG1_longest_isoform.gff3 -g ~/Salvinia_molesta/SG1/SG1.fasta -x SG1.cds -y SG1.prot.fa
+gffread SG2_longest_isoform.gff3 -g ~/Salvinia_molesta/SG2/SG2.fasta -x SG2.cds -y SG2.prot.fa
+
+##Running all paranome
+wgd dmd SG1.cds -o wgd_dmd
+wgd ksd --pairwise wgd_dmd/SG1.cds -o wgd_ksd
+
+##Runing only syntelogs
+wgd dmd SG1.cds -o wgd_dmd -n 100
+wgd ksd --pairwise wgd_dmd/SG1.cds -o wgd_ksd
+wgd syn -f mRNA -a SG1 wgd_dmd/SG1.cds.tsv SG1_longest_isoform.gff3 -ks wgd_ksd/SG1.tsv.ks.tsv -o wgd_syn
+
+##synteny and peak finder
+wgd dmd SG1.cds -o wgd_dmd -n 100
+wgd ksd --pairwise wgd_dmd/SG1.cds.tsv SG1.cds -o wgd_ksd -n 100
+wgd syn -f mRNA -a SG1 wgd_dmd/SG1.cds.tsv SG1_longest_isoform.gff3 -ks wgd_ksd/SG1.tsv.ks.tsv -o wgd_syn
+wgd peak --heuristic wgd_ksd/SG1.tsv.ks.tsv -ap wgd_syn/iadhore-out/anchorpoints.txt -sm wgd_syn/iadhore-out/segments.txt -le wgd_syn/iadhore-out/list_elements.txt -mp wgd_syn/iadhore-out/multiplicon_pairs.txt -n 1 4 -kc 3 -o wgd_peak
+
+##############
+##############
+##SG2 Ks wgd2
+wgd dmd SG2.cds -o wgd_dmd
+wgd ksd wgd_dmd/SG2.cds_10.tsv SG2.cds  -o wgd_ksd
+ wgd_ksd/SG2.cds.tsv.ks.tsv
+##Runing only syntelogs
+wgd dmd SG2.cds -o wgd_dmd -n 100
+wgd ksd --pairwise wgd_dmd/SG2.cds.08.tsv SG2.cds -o wgd_ksd -n 150
+wgd syn -f mRNA wgd_dmd/SG2.cds.08.tsv SG2_longest_isoform_renamed.gff3 -ks wgd_ksd/SG2.cds.08.tsv.ks.tsv -o wgd_syn
+wgd syn -f mRNA wgd_dmd/SG2.cds.08.tsv SG2_longest_isoform_renamed.gff3 -ks wgd_ksd/SG2.cds.08.tsv.ks.tsv -o wgd_syn
+~/bin/i-ADHoRe-master/build/src/i-adhore iadhore.conf
+
+##synteny and peak finder
+wgd dmd SG2.cds -o wgd_dmd -n 100
+wgd ksd wgd_dmd/SG2.cds.tsv SG2.cds -o wgd_ksd -n 180
+wgd syn -f mRNA -a SG2 wgd_dmd/SG2.cds.tsv SG2_longest_isoform.gff3 -ks wgd_ksd/SG2.tsv.ks.tsv -o wgd_syn
+wgd peak --heuristic wgd_ksd/SG2.tsv.ks.tsv -ap wgd_syn/iadhore-out/anchorpoints.txt -sm wgd_syn/iadhore-out/segments.txt -le wgd_syn/iadhore-out/list_elements.txt -mp wgd_syn/iadhore-out/multiplicon_pairs.txt -n 1 4 -kc 3 -o wgd_peak
+
+wgd ksd --pairwise wgd_dmd/SG2.10.cds.tsv SG2.cds -o wgd_ksd -n 180
+wgd syn -f mRNA wgd_dmd/SG2.10.cds.tsv SG2_longest_isoform.gff3 -ks wgd_ksd/SG2.10.cds.tsv.ks.tsv -o wgd_syn
+wgd peak --heuristic wgd_ksd/SG2.10.cds.tsv.ks.tsv -ap wgd_syn/iadhore-out/anchorpoints.txt -sm wgd_syn/iadhore-out/segments.txt -le wgd_syn/iadhore-out/list_elements.txt -mp wgd_syn/iadhore-out/multiplicon_pairs.txt -n 1 4 -kc 3 -o wgd_peak
+
+#Estimating the time of the duplication!!!!! - dropped
+wgd peak --heuristic wgd_ksd/SG1.08.cds.tsv.ks.tsv -ap wgd_syn/iadhore-out/anchorpoints.txt -sm wgd_syn/iadhore-out/segments.txt -le wgd_syn/iadhore-out/list_elements.txt -mp wgd_syn/iadhore-out/multiplicon_pairs.txt -o wgd_peak
+wgd dmd -f  SMOL1.cds.fa   -ap wgd_peak/AnchorKs_FindPeak/Peak_1_SG1.08.cds.tsv.ks.tsv_95%CI_AP_for_dating_weighted_format.tsv -o wgd_dmd_ortho Als_v3.1_cds.fa azolla_caroliniana_cds.fa Azolla_filiculoides.CDS.highconfidence_v1.1.fasta Lygodium_japonica_cds.fa Ma_polymorpha_cds.fa Mvestita_v3_cds.fa Osmunda_cinnamomeu_cds.fa Salvinia_cucullata.CDS.highconfidence_v1.2.fasta SG2.cds.fa SMOL1.cds.fa
+cp ~/ycr3/WHALE_molesta/new_braker/marchantia_cat_molesta/ultrametric_marchantia_molesta.nwk ./
+wgd focus -n 50 --protdating --aamodel lg wgd_dmd_ortho/merge_focus.tsv -sp ultrametric_marchantia_molesta.nwk -o wgd_dating -d mcmctree -ds 'burnin = 2000' -ds 'sampfreq = 1000' -ds 'nsample = 20000' Als_v3.1_cds.fa azolla_caroliniana_cds.fa Azolla_filiculoides.CDS.highconfidence_v1.1.fasta Lygodium_japonica_cds.fa Ma_polymorpha_cds.fa Mvestita_v3_cds.fa Osmunda_cinnamomeu_cds.fa Salvinia_cucullata.CDS.highconfidence_v1.2.fasta SG2.cds.fa SMOL1.cds.fa
+python ~/bin/wgd-2.0.38/wgd/postplot.py postdis dates.txt --percentile 90 --title "WGD date" --hpd -o "Ranunculales_WGD_date.svg"
+
+for file in *.fa
+do
+    echo "sed $file"
+    name=`basename $file`
+sed -i.bak 's/lcl|]/MPOL_MPOL_/g' $file 
+sed -i.bak 's/Aspi/ASPI_ASPI_/g' $file 
+sed -i.bak 's/Mvestita/MVES_MVES/g' $file 
+sed -i.bak 's/Sacu/SACU_SACU/g' $file 
+sed -i.bak 's/Ma_polymor/MPOL_MPOL/g' $file 
+sed -i.bak 's/Azfi_/AZFI_AZFI_/g' $file 
+sed -i.bak 's/scaffold-CVEG/AZCA_AZCA_scaffold-CVEG/g' $file 
+sed -i.bak 's/scaffold-PBUU/LYJAP_LYJAP_scaffold-PBUU/g' $file 
+sed -i.bak 's/scaffold-RFMZ/OSMC_OSMC_scaffold-RFMZ/g' $file 
+done
+
+##Azolla
+wgd dmd azolla.cds -o wgd_dmd -n 100
+wgd ksd --pairwise wgd_dmd/azolla.cds.10.tsv azolla.cds -o wgd_ksd -n 180
+wgd syn -f mRNA azolla_dmd/azolla.cds.10.tsv azolla_longest_isoform.gff3 -ks ksd_azolla/azolla.cds.10.tsv.ks.tsv -o wgd_syn
+
+sed -i.bak 's/>g/>azolla.g/g' azolla.cds 
+sed -i.bak 's/=g/=azolla.g/g' azolla_longest_isoform.gff3
+sed -i.bak 's/>g/>sg1.g/g' SG1.cds
+sed -i.bak 's/=g/=sg1.g/g' SG1_longest_isoform.gff3
+
+cat molesta_wgd.gff3 azolla_longest_isoform.gff3 > azolla_molesta.gff3
+
+wgd dmd azolla.cds SG1.cds SG2.cds -o sg1_wgd_dmd -n 100 --globalmrbh
+wgd dmd azolla.cds molesta_wgd_dmd_concat.cds -o molesta_azolla_dmd -n 100 --globalmrbh
+wgd ksd  molesta_azolla_dmd/global_MRBH.tsv azolla.cds molesta_wgd_dmd_concat.cds -o ksd_molesta_azolla -n 150
+wgd syn -f mRNA molesta_azolla_dmd/global_MRBH.tsv azolla_molesta.gff3 -ks ksd_molesta_azolla/global_MRBH.tsv.ks.tsv -o syn
+
+wgd dmd azolla.cds SG1.cds -o sg1_dmd -n 100 --globalmrbh
+wgd dmd azolla.cds SG2.cds -o sg2_dmd -n 100 --globalmrbh
+wgd ksd sg1_dmd/global_MRBH.tsv azolla.cds SG1.cds -o ksd_sg1 -n 150
+wgd ksd sg2_dmd/global_MRBH.tsv azolla.cds SG2.cds -o ksd_sg2 -n 150
+wgd syn -f mRNA sg1_dmd/global_MRBH.tsv azolla_molesta.gff3 SG1_longest_isoform.gff3 -ks ksd_sg1/global_MRBH.tsv.ks.tsv -o syn_sg1
+wgd syn -f mRNA sg2_dmd/global_MRBH.tsv azolla_molesta.gff3 SG2_longest_isoform_renamed.gff3 -ks ksd_sg2/global_MRBH.tsv.ks.tsv -o syn_sg2
+
+wgd dmd azolla.cds  -o azolla_dmd  -n 100 --globalmrbh
+wgd ksd  azolla_dmd/azolla.cds.tsv azolla.cds -o ksd_azolla -n 150
+wgd ksd  azolla_dmd/azolla.cds.10.tsv azolla.cds -o ksd_azolla -n 150
+
+wgd syn -f azolla_dmd/azolla.cds.tsv azolla_molesta.gff3 -ks ksd_azolla/azolla.cds.tsv.ks.tsv -o azolla_syn
+
+wgd dmd cucu.fasta SG1.cds -o sg1_dmd -n 100 --globalmrbh
+wgd dmd cucu.fasta SG2.cds -o sg2_dmd -n 100 --globalmrbh
+wgd ksd sg1_dmd/global_MRBH.tsv cucu.fasta SG1.cds -o ksd_sg1 -n 150
+wgd ksd sg2_dmd/global_MRBH.tsv cucu.fasta SG2.cds -o ksd_sg2 -n 150
+
+##Had remove -mRNA-1 from the mRNA flagged in cucu.gff
+wgd syn -f mRNA sg1_dmd/global_MRBH.tsv cucu.gff SG1_longest_isoform.gff3 -ks ksd_sg1/global_MRBH.tsv.ks.tsv -o syn_sg1
+wgd syn -f mRNA sg2_dmd/global_MRBH.tsv cucu.gff SG2_longest_isoform_renamed.gff3 -ks ksd_sg2/global_MRBH.tsv.ks.tsv -o syn_sg2
+
+wgd dmd cucu.fasta -o cucu_dmd -n 100
+wgd ksd cucu_dmd/cucu.fasta.10.tsv cucu.fasta -o ksd_cucu -n 150
+wgd syn -f mRNA cucu_dmd/cucu.fasta.10.tsv cucu.gff -ks ksd_cucu/cucu.fasta.10.tsv.ks.tsv -o syn_cucu
+
+##SG1 vs SG2 as separate species
+wgd dmd SG1.cds SG2.cds -o dmd -n 100 --globalmrbh
+wgd ksd dmd/global_MRBH.tsv SG2.cds SG1.cds -o ksd -n 180
+wgd syn -f mRNA dmd/global_MRBH.tsv SG1_longest_isoform.gff3 SG2_longest_isoform_renamed.gff3 -ks ksd/global_MRBH.tsv.ks.tsv -o syn
+
+#use idahore
+~/bin/i-ADHoRe-master/build/src/i-adhore iadhore.conf
+
+
+sed 's/>g/>sg2.g/g' -i.bak SG2.cds
+sed 's/>g/>sg1.g/g' -i.bak SG1.cds
+sed 's/ID=g/ID=sg1.g/g' -i.bak SG1_longest_isoform.gff3 
+sed 's/ID=g/ID=sg2.g/g' -i.bak SG2_longest_isoform_renamed.gff3
+sed 's/Chr/seligagarota_/g' -i.bak SG2_longest_isoform_renamed.gff3
+
+
+##############
+##############
+##Running subgenomes together
+##concat molesta
+sed 's/>2g/>2SG/g' SG2.cds.cds > SG2.cds
+sed 's/>1g/>1SG/g' SG1.cds.cds > SG1.cds
+sed 's/1SG/sg1.g/g' -i.bak SG1.cds
+sed 's/2SG/sg2.g/g' -i.bak SG2.cds
+sed 's/1SG/sg1.g/g' -i.bak SG1_longest_isoform_renamed.gff3
+sed 's/2SG/sg2.g/g' -i.bak SG2_longest_isoform_renamed.gff3
+
+sed 's/1SG/sg1.g/g' -i.bak molesta_wgd_dmd_concat.cds.tsv
+sed 's/2SG/sg2.g/g' -i.bak molesta_wgd_dmd_concat.cds.tsv
+
+sed 's/1SG/sg1.g/g' -i.bak SG1_longest_isoform_renamed.gff3
+sed 's/2SG/sg2.g/g' -i.bak SG2_longest_isoform_renamed.gff3
+PATH="$PATH:~/bin/i-ADHoRe-master/build/src/i-adhore"
+
+wgd dmd molesta_wgd_dmd_concat.cds  -o wgd_dmd -n 100
+wgd ksd --pairwise wgd_dmd/molesta_wgd_dmd_concat.cds.tsv molesta_wgd_dmd_concat.cds -o wgd_ksd -n 180
+wgd syn -f mRNA wgd_dmd/molesta_wgd_dmd_concat_10.cds.tsv molesta_wgd.gff3 -ks wgd_ksd/molesta_wgd_dmd_concat_10.cds.tsv.ks.tsv -o wgd_syn
+
+wgd dmd SG1.cds SG2_edited_header.cds -o wgd_dmd -n 3 -oi
+wgd ksd wgd_dmd/Orthologues.tsv SG1.cds SG2_edited_header.cds -o wgd_ksd -n 40
+wgd syn -f mRNA wgd_dmd/Orthologues.tsv molesta_wgd.gff3 -ks wgd_ksd/Orthologues.tsv.ks.tsv -o wgd_syn
+
+##Reweight test
+wgd ksd --pairwise wgd_dmd/molesta_wgd_dmd_concat.cds.10.tsv molesta_wgd_dmd_concat.cds -o wgd_ksd -n 50 --reweight
+wgd syn wgd_dmd/molesta_wgd_dmd_concat.cds.10.tsv molesta_wgd.gff3 -ks wgd_ksd/molesta_wgd_dmd_concat.cds.10.tsv.ks.tsv -o wgd_syn
+
+##For David
+wgd dmd Ptro_v2.1_primaryTranscript.cds -o wgd_dmd -n 100
+wgd ksd --pairwise wgd_dmd/Ptro_v2.1_primaryTranscript.cds.15.tsv Ptro_v2.1_primaryTranscript.cds -o wgd_ksd -n 100
+wgd syn -f mRNA wgd_dmd/Ptro_v2.1_primaryTranscript.cds.15.tsv Ptro_v2.1_gene.gff3 -ks wgd_ksd/Ptro_v2.1_primaryTranscript.cds.15.tsv.ks.tsv -o wgd_syn
+
+##############
+##############
+##Checking the telomeres
+conda install -c bioconda -c conda-forge telosearchlr
+
+TeloSearchLR.py -f SRR7594465.fasta -t 1000 -k 4 -K 20 -m 1 -M 100 -n 6000
+
+TeloSearchLR.py -f ~/Salvinia_molesta/S_molesta_cleaned_46_chr.fasta -k 4 -K 20 -m 1 -M 500 -n 30000 -c 30
+
+TeloSearchLR.py -f ~/ycr3/chopped_46/Chr_41.fasta -k 4 -K 20 -t 5000 -m 1 -M 100 -n 6000 -c 40
+TeloSearchLR.py -f ~/ycr3/chopped_46/Chr_28.fasta -k 4 -K 20 -t 5000 -m 1 -M 100 -n 6000
+
+TeloSearchLR.py -f ~/ycr3/chopped_46/Chr_39.fasta -k 4 -K 20 -t 25000 -m 1 -M 100 -n 6000 -c 100
+mkdir 20
+cd 20
+TeloSearchLR.py -f ~/ycr3/chopped_46/Chr_20.fasta -k 4 -K 20 -t 25000 -m 1 -M 100 -n 6000 -c 100
+
+Check for 39 telomores on 20
+
+##Trying on the hifi reads 
+TeloSearchLR.py -f S_molesta_raw_reads_kraken_extract.fasta -k 4 -K 20 -t 5000 -m 1 -M 100 -n 6000 -c 40
+
+############
+############
+############
+##Testing HapHiC
+conda env create -f ~/bin/HapHiC/conda_env/environment_py310.yml
+
+~/bin/HapHiC/haphic check
+
+##Aligning HiC reads with assembly
+bwa mem -5SP -t 140 ~/ycr3/assembly_hifiasm/Salvinia_molesta_Hifi.asm.p_ctg.fasta ~/ycr3/autohic/Salvinia_molesta/raw_data/fastq/Salvinia_molesta_HiC_R1.fastq.gz ~/ycr3/autohic/Salvinia_molesta/raw_data/fastq/Salvinia_molesta_HiC_R2.fastq.gz | samblaster | samtools view -@ 140 -S -h -b -F 3340 -o HiC
+~/bin/HapHiC/utils/filter HiC 1 --nm 3 --threads 140 | samtools view - -b -@ 140 -o HiC.filtered
+
+##Running the pipeline
+~/bin/HapHiC/haphic pipeline ~/ycr3/assembly_hifiasm/Salvinia_molesta_Hifi.asm.p_ctg.fasta HiC.filtered 45 --correct_nrounds 2 --threads 10 --processes 10 &2>haphic.log
+bwa mem -5SP -t 180 ~/ycr3/assembly_hifiasm/Salvinia_molesta_Hifi.asm.p_ctg.fasta ~/ycr3/autohic/Salvinia_molesta/raw_data/fastq/Salvinia_molesta_HiC_R1.fastq.gz ~/ycr3/autohic/Salvinia_molesta/raw_data/fastq/Salvinia_molesta_HiC_R2.fastq.gz | samblaster | samtools view -@ 140 -S -h -b -F 3340 -o HiC
+cd 46_chr_test/
+~/bin/HapHiC/haphic pipeline ~/ycr3/assembly_hifiasm/Salvinia_molesta_Hifi.asm.p_ctg.fasta HiC.filtered 46 --correct_nrounds 2 --threads 10 --processes 10 &2>haphic.log
+
+############
+############
+############
+##Testing AutoHiC#
+
+~/bin/AutoHiC/autohic.py 
+
+python ~/bin/AutoHiC/autohic.py -c cfg-autohic.txt > log.txt 2>&1 &
+
+~/bin/compleasm/compleasm.py protein -t 20 -l viridiplantae_odb12 -p ~/Salvinia_molesta/SG1/annotation/SG1_braker/SG1.prot.fa -o SG1_prot &
+~/bin/compleasm/compleasm.py protein -t 20 -l viridiplantae_odb12 -p ~/Salvinia_molesta/SG2/annotation/second_braker/SG2.prot.fa -o SG2_prot &
+~/bin/compleasm/compleasm.py protein -t 20 -l viridiplantae_odb12 -p molesta.prot.fa -o molesta_prot &
+~/bin/compleasm/compleasm.py protein -t 20 -l viridiplantae_odb12 -p ~/data/Salviniales/Salvinia_cucullata/annotation/braker2/cucu_34.prot.fa -o cucu_prot
+
+~/bin/compleasm/compleasm.py run -t 20 -l viridiplantae_odb12 -a ~/Salvinia_molesta/S_molesta_cleaned_46_chr.fasta -o molesta_dna
+~/bin/compleasm/compleasm.py run -t 20 -l viridiplantae_odb12 -a ~/Salvinia_molesta/SG1/SG1.fasta -o sg1_dna
+~/bin/compleasm/compleasm.py run -t 20 -l viridiplantae_odb12 -a ../../../data/Salviniales/Salvinia_cucullata/gap_filled/cucu_chr34.fasta  -o cucu_dna
+
+##organelle chloroplast genome
+conda activate chloroplast
+ptGAUL.sh -r Salvinia_cucullata.cp_genome_v1_3.fasta -l ~/Salvinia_molesta/Salvinia_molesta_hif_cat.fastq.gz -t 25 -o S_molesta_chlroplast
+
+##Identifying the centromeres
+~/Salvinia_molesta/SG1/SG1.fasta
+~/Salvinia_molesta/SG1/annotation/EDTA/SG1.fasta.mod.EDTA.TEanno.gff3
+
+conda create -n quartet --channel conda-forge --channel bioconda python=3.11.4 minimap2=2.26 mummer4=4.0.0rc1 trf=4.09.1 cd-hit=4.8.1 blast=2.14.0 tidk=0.2.31 r=4.3 r-rideogram=0.2.2 r-ggplot2=3.4.4 gnuplot=5.4 unimap=0.1
+
+##Using default minseq 100bp and maxseq 200bp
+~/bin/quarTeT-main/quartet.py CentroMiner -i SG1.fasta --TE SG1.fasta.mod.EDTA.TEanno.gff3 --gene SG1_longest_isoform.gff3 -t 80
+~/bin/quarTeT-main/quartet.py CentroMiner -i SG2.fasta --TE SG2.fasta.mod.EDTA.TEanno.gff3 --gene SG2_longest_isoform.gff3 -t 80
+
+~/bin/quarTeT-main/quartet.py CentroMiner -i SG1.fasta --TE SG1.fasta.mod.EDTA.TEanno.gff3 --gene SG1_longest_isoform.gff3 -t 80 -n 15 -m 3000 -e 0.00000001
+~/bin/quarTeT-main/quartet.py CentroMiner -i SG2.fasta --TE SG2.fasta.mod.EDTA.TEanno.gff3 --gene SG2_longest_isoform.gff3 -t 80 -n 15 -m 3000 -e 0.00000001
+
+##Trying the telomere explorer default
+~/bin/quarTeT-main/quartet.py TeloExplorer -i ~/ycr3/centromere_molesta/SG1/SG1.fasta
+~/bin/quarTeT-main/quartet.py TeloExplorer -i ~/ycr3/centromere_molesta/SG2/SG2.fasta
+
+
+##Trying tandem repeat finder
+trf -m 
+
+trf SG1.softmasked.fasta Match Mismatch Delta PM PI 100 200
+trf yoursequence.txt 2 7 7 80 10 50 500 -f -d -m
+
+SG1.fasta.mod.EDTA.TEanno.gff3 
+
+  File = sequences input file
+  Match  = matching weight
+  Mismatch  = mismatching penalty
+  Delta = indel penalty
+  PM = match probability (whole number)
+  PI = indel probability (whole number)
+  Minscore = minimum alignment score to report
+  MaxPeriod = maximum period size to report
+
+
+###Doing SG1 and SG2 vs S. cucullata
+conda activate /home/fay-wei/bin/miniconda3/envs/jcvi
+
+/home/fay-wei/data/_Salviniales_genomes/Salvinia/Salvinia_cucullata.protein.highconfidence_v1.2.fasta
+cp ~/Salvinia_molesta/SG1/synteny_with_cucullata_aa/S_cucullata.bed ./
+
+sed -i.bak 's/_mRNA_1//g' Salvinia_cucullata.gene_models.highconfidence_v1.2.gff
+sed -i.bak 's/_mRNA_1//g' S_cucullata.bed
+
+## format gff and turn it into bed 
+python -m jcvi.formats.gff bed --type=mRNA --key=ID Salvinia_cucullata.gene_models.highconfidence_v1.2.gff > S_cucullata.bed
+
+## run mcscan self self synteny analysis
+python -m jcvi.compara.catalog ortholog SG1 S_cucullata 
+python -m jcvi.compara.catalog ortholog SG2 S_cucullata
+python -m jcvi.compara.catalog ortholog SG2 SG2
+
+python -m jcvi.compara.synteny depth --histogram SG1.S_cucullata.anchors
+python -m jcvi.compara.synteny depth --histogram SG2.S_cucullata.anchors
+
+##Gettin reptitive sequences mapped using jcvi (heatmap and histogram)
+python -m jcvi.formats.gff bed --type CACTA_TIR_transposon --key=ID SG1.fasta.mod.EDTA.TEanno.gff3 -o cacta.bed
+python -m jcvi.formats.gff bed --type Mutator_TIR_transposon --key=ID SG1.fasta.mod.EDTA.TEanno.gff3 -o mutator_tir.bed
+python -m jcvi.formats.gff bed --type LTR_retrotransposon --key=ID SG1.fasta.mod.EDTA.TEanno.gff3 -o ltr.bed
+python -m jcvi.formats.gff bed --type helitron --key=ID SG1.fasta.mod.EDTA.TEanno.gff3 -o Helitron.bed
+python -m jcvi.formats.gff bed --type all SG1.fasta.mod.EDTA.TEanno.gff3 -o Repeats.bed
+
+python -m jcvi.formats.gff bed --type CACTA_TIR_transposon --key=ID SG2.fasta.mod.EDTA.TEanno.gff3 -o cacta.bed
+python -m jcvi.formats.gff bed --type Mutator_TIR_transposon --key=ID SG2.fasta.mod.EDTA.TEanno.gff3 -o mutator_tir.bed
+python -m jcvi.formats.gff bed --type LTR_retrotransposon --key=ID SG2.fasta.mod.EDTA.TEanno.gff3 -o ltr.bed
+python -m jcvi.formats.gff bed --type helitron --key=ID SG2.fasta.mod.EDTA.TEanno.gff3 -o Helitron.bed
+python -m jcvi.formats.gff bed --type all SG2.fasta.mod.EDTA.TEanno.gff3 -o Repeats.bed
+
+REPEAT=SG1.fasta.mod.EDTA.TEanno.gff3
+GENOME=SG1_longest_isoform.gff3
+
+REPEAT=~/Salvinia_molesta/SG2/annotation/EDTA/SG2.fasta.mod.EDTA.TEanno.gff3
+GENOME=~/Salvinia_molesta/SG2/annotation/second_braker/SG2_longest_isoform.gff3
+
+python -m jcvi.formats.gff bed --type all $REPEAT -o Repeats.bed
+
+agat_convert_sp_gff2bed.pl --gff SG1.fasta.mod.EDTA.TEanno.gff3 -o Repeats.bed
+
+python -m jcvi.graphics.landscape stack ~/Salvinia_molesta/SG2/SG2.fasta \
+    --stacks=Repeats,Exons \
+    --window=100000 \
+    --shift=50000
+
+python -m jcvi.graphics.landscape heatmap ~/Salvinia_molesta/SG1/SG1.fasta Chr_4 \
+    --stacks=Repeats,Exons \
+    --heatmaps=cacta,ltr,helitron,mutator,Exons 
+
+##Running orthofinder on S. cucullata and S. molesta to see the 1:2 relationship.
+sed -i.bak 's/>g/>SG2_/g' SG2.prot.fa
+rm *.bak
+
+orthofinder -f ~/ycr3/orthofinder_salvinia -a 170 2>cucu_molesta_ortho_log
+orthofinder -f ~/ycr3/orthofinder_salvinia_molesta/natans_run -a 180 2>cucu_molesta_natans_ortho_log
+
+for file in ~/ycr3/orthofinder_salvinia/OrthoFinder/Results_Mar15/Orthogroup_Sequences/*.fa
+do
+    echo "grepping $file"
+    name=`basename $file`
+grep -l SG1 $file | while read -r filename; do cp $file ./;
+done
+done
+
+for file in ../*.fa
+do
+    echo "grepping $file"
+    name=`basename $file`
+grep -l SG2 $file | while read -r filename; do cp $file ./;
+done
+done
+
+for file in ./babado/*.fa
+do
+    echo "grepping $file"
+    name=`basename $file`
+grep -l Sacu_ $file | while read -r filename; do cp $file ./;
+done
+done
+
+for file in Orthogroups.tsv 
+do
+    echo "grepping $file"
+    name=`basename $file`
+grep -l Sacu_v1.1_ $file | while read -r filename; do cp $file ./;
+done
+done
+
+sed -i.bak 's/Salvinia_cucullata.protein.highconfidence_v1.2/Salvinia_cucullata/g' Orthogroups.tsv
+grep 'Sacu_v1.1_' Orthogroups.tsv  > vibes.txt
+grep -E '(SG1|SG2)' vibes.txt > vibes1.txt
+
+sed -i.bak 's/SG1_/Molesta_/g' vibes1.txt
+sed -i.bak 's/SG2_/Molesta_/g' vibes1.txt
+
+
+~/bin/whale/Whale.jl-master/scripts/orthofilter.py Orthogroups.tsv SG2.prot,SG1.prot,Salvinia_cucullata OG_filtered_whale.txt 0
+~/bin/whale/Whale.jl-master/scripts/orthofilter.py Orthogroups.tsv SG1.prot,Salvinia_cucullata OG_filtered_whale.txt 0
+
+##Making synteny azolla vs Salvinia molesta subgenomes
+## extract cds from the gff
+gffread azolla_longest_isoform_22chr.gff3 -g azolla_1kk.fasta -x azolla_chr22.cds -y azolla_chr22.prot.fa -M -K
+python -m jcvi.formats.gff bed --type=mRNA --key=ID azolla_longest_isoform_22chr.gff3 > azolla_chr22.bed
+
+## activate my mcscan conda package
+conda activate /home/fay-wei/bin/miniconda3/envs/jcvi
+
+##I used the bed files from the previous synteny inferences
+python -m jcvi.compara.catalog ortholog SG1 azolla_chr22
+python -m jcvi.compara.catalog ortholog SG2 azolla_chr22
+
+python -m jcvi.compara.synteny depth --histogram SG1.azolla_chr22.lifted.anchors 
+python -m jcvi.compara.synteny depth --histogram SG2.azolla_chr22.lifted.anchors 
+
+##EDTA2 on Molesta for funsies
+~/bin/EDTA-master/EDTA.pl --genome SG1.fasta --step all --overwrite 1 --anno 1 -t 70 2>log_EDTA
+~/bin/EDTA-master/EDTA.pl --genome SG2.fasta --step all --overwrite 1 --anno 1 -t 70 2>log_EDTA
+
+sed 's/v1.1//g' -i.bak Salvinia_cucullata.genome_v1.2.fasta
+~/bin/EDTA-master/EDTA.pl --genome Salvinia_cucullata.genome_v1.2.fasta --step all --overwrite 1 --anno 1 -t 170 2>log_EDTA
+
+##Running S. natans Ks
+##Natans transcriptome
+fastp -i SRR2103742.fastq.gz -o SRR2103742_trimmed.fastq.gz
+Trinity --seqType fq --single  SRR2103742_trimmed.fastq.gz --run_as_paired --CPU 50 --max_memory 30G 
+cd-hit-est -o cdhit_filtered -c 0.98 -i trinity_out_dir.Trinity.fasta -p 1 -d 0 -b 3 -T 20 -M 2000
+TransDecoder.LongOrfs -t natans_trinity_cdhit_200bp.fasta --output_dir trans_natans
+~/bin/compleasm/compleasm.py protein -t 20 -l viridiplantae_odb10 -p longest_orfs.pep -o natans &
+
+##
+wgd dmd longest_orfs.cds -o wgd_dmd -n 100
+wgd ksd --pairwise wgd_dmd/longest_orfs.10.cds.tsv longest_orfs.cds -o wgd_ksd -n 150
+wgd syn -f mRNA longest_orfs.cds wgd_dmd/longest_orfs.10.cds.tsv longest_orfs.gff3 -ks wgd_ksd/longest_orfs.10.cds.tsv.ks.tsv -o wgd_syn
+
+##GENESPACE
+##use the li lab env (snakemake) -- the input files are the genome assembly .fasta and the gff3 -- make sure headers are the same! The directory organization should be each directory the species name, with both fasta and gff within
+snakemake --use-conda --cores 40 --config INPUT_DIR=~/Salvinia_molesta/genespace
+snakemake --use-conda --cores 40 --config INPUT_DIR=~/data/Salviniales/genespace
+
+##Counting busco genes!
+awk 'BEGIN{print "Frequency\tCount"} {c[$1]++} END{for (i in c) f[c[i]]++; for (j in f) print j, f[j]}' full_table_busco_format.tsv | sort -n > busco_counting.tsv
+awk 'BEGIN{print "Frequency\tCount"} {c[$1]++} END{for (i in c) f[c[i]]++; for (j in f) print j, f[j]}' full_table.tsv | sort -n > busco_counting.tsv
+
+##Calculating LAI
+LAI -genome SG1.fasta.mod -intact SG1.fasta.mod.EDTA.raw/LTR/SG1.fasta.mod.pass.list -all SG1.fasta.mod.EDTA.anno/SG1.fasta.mod.out > SG1.LAI
+LAI -genome SG2.fasta.mod -intact SG2.fasta.mod.EDTA.raw/LTR/SG2.fasta.mod.pass.list -all SG2.fasta.mod.EDTA.anno/SG2.fasta.mod.out > SG2.LAI
+LAI -genome cucu_1kk.fasta.mod -intact cucu_1kk.fasta.mod.EDTA.raw/LTR/cucu_1kk.fasta.mod.pass.list -all cucu_1kk.fasta.mod.EDTA.anno/cucu_1kk.fasta.mod.out > cucu.LAI
+
+##molesta_combined_subgenomes_as_focus
+singularity exec docker://vibpsb/ksrates ksrates init config_files/config_molesta.txt --expert config_files/config_expert.txt
+singularity exec docker://vibpsb/ksrates ksrates paralogs-ks config_files/config_molesta.txt --expert config_files/config_expert.txt --n-threads 160
+singularity exec docker://vibpsb/ksrates ksrates orthologs-ks config_files/config_molesta.txt --expert config_files/config_expert.txt cucullata molesta --n-threads 160
+singularity exec docker://vibpsb/ksrates ksrates orthologs-ks config_files/config_molesta.txt --expert config_files/config_expert.txt cucullata azolla --n-threads 160
+singularity exec docker://vibpsb/ksrates ksrates orthologs-ks config_files/config_molesta.txt --expert config_files/config_expert.txt molesta azolla --n-threads 160
+singularity exec docker://vibpsb/ksrates ksrates orthologs-ks config_files/config_molesta.txt --expert config_files/config_expert.txt marsilea azolla --n-threads 160
+singularity exec docker://vibpsb/ksrates ksrates orthologs-ks config_files/config_molesta.txt --expert config_files/config_expert.txt marsilea molesta --n-threads 160
+singularity exec docker://vibpsb/ksrates ksrates orthologs-ks config_files/config_molesta.txt --expert config_files/config_expert.txt marsilea cucullata --n-threads 160
+singularity exec docker://vibpsb/ksrates ksrates orthologs-analysis config_files/config_molesta.txt --expert config_files/config_expert.txt
+singularity exec docker://vibpsb/ksrates ksrates plot-orthologs config_files/config_molesta.txt --expert config_files/config_expert.txt
+singularity exec docker://vibpsb/ksrates ksrates orthologs-adjustment config_files/config_molesta.txt --expert config_files/config_expert.txt
+singularity exec docker://vibpsb/ksrates ksrates plot-paralogs config_files/config_molesta.txt --expert config_files/config_expert.txt
+singularity exec docker://vibpsb/ksrates ksrates plot-tree config_files/config_molesta.txt --expert config_files/config_expert.txt
+singularity exec docker://vibpsb/ksrates ksrates paralogs-analyses config_files/config_molesta.txt --expert config_files/config_expert.txt
+singularity exec docker://vibpsb/ksrates ksrates orthologs-ks-cleanup path/to/ortholog_distributions --expert config_files/config_expert.txt
+singularity exec docker://vibpsb/ksrates ksrates paralogs-ks-multi config_files/config_molesta.txt --expert config_files/config_expert.txt --n-threads 160
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
